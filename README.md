@@ -4,6 +4,20 @@ A modern full-stack microservices application for tracking habits and receiving 
 
 ## Architecture
 
+```mermaid
+graph TD
+    Client[React Frontend] -->|HTTP Requests| Gateway[API Gateway :5000]
+    Gateway -->|/api/users| UserService[User Service :5001]
+    Gateway -->|/api/habits| HabitService[Habit Service :5002]
+    Gateway -->|/api/analytics| AnalyticsService[Analytics Service :5003]
+    Gateway -->|/api/ai| AIService[AI Service :5004]
+    
+    UserService -->|User Data| MongoDB
+    HabitService -->|Habit Data| MongoDB[(MongoDB Cluster)]
+    AnalyticsService -->|Read Data| MongoDB
+    AIService -->|Read Data| MongoDB
+```
+
 - **Frontend**: React + Vite + Tailwind CSS
 - **API Gateway**: Express.js (Port 5000)
 - **User Service**: Express.js + MongoDB (Port 5001)
@@ -52,33 +66,13 @@ npm install
 
 ### 3. Start Services
 
-Open 6 separate terminals:
+The fastest way to install dependencies and run all microservices simultaneously is by running the root start script (Windows):
 
-```bash
-# Terminal 1 - User Service
-cd user-service
-npm start
-
-# Terminal 2 - Habit Service
-cd habit-service
-npm start
-
-# Terminal 3 - Analytics Service
-cd analytics-service
-npm start
-
-# Terminal 4 - AI Insights Service
-cd ai-service
-npm start
-
-# Terminal 5 - API Gateway
-cd api-gateway
-npm start
-
-# Terminal 6 - Frontend
-cd frontend
-npm run dev
+```powershell
+.\start.ps1
 ```
+
+*(If you are on Linux/Mac or prefer manual startup, you will need to open 6 terminals and run `npm start` inside each microservice directory, and `npm run dev` in the frontend).*
 
 ### 4. Access Application
 
@@ -139,3 +133,14 @@ smart-habit-tracker/
 **Frontend**: React, Vite, Tailwind CSS, Axios, Recharts
 **Backend**: Node.js, Express.js, MongoDB, JWT, bcryptjs
 **Architecture**: Microservices with API Gateway
+
+## Troubleshooting
+
+> [!WARNING]
+> **503 Service Offline Error**: If the frontend displays network errors, ensure that `api-gateway` and the backing microservices have not crashed. Check the terminal outputs for the specific service.
+
+> [!WARNING]
+> **MongoDB Connection Refused**: Verify that MongoDB Community Server is installed and actively running as a background service on `localhost:27017`.
+
+> [!TIP]
+> **Seed Script Fails**: Make sure you run `npm run seed` inside `user-service` *before* running it in `habit-service`, since the default habits rely on the test user existing in the database first.

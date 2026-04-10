@@ -4,6 +4,7 @@ import { habitAPI, analyticsAPI, aiAPI } from '../api';
 import AddHabitModal from '../components/AddHabitModal';
 import WeeklyChart from '../components/WeeklyChart';
 import EditHabitModal from '../components/EditHabitModal';
+import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import toast from 'react-hot-toast';
 
 function Dashboard({ setAuth }) {
@@ -13,6 +14,7 @@ function Dashboard({ setAuth }) {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingHabit, setEditingHabit] = useState(null);
+  const [deletingHabit, setDeletingHabit] = useState(null);
   const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -56,15 +58,20 @@ function Dashboard({ setAuth }) {
     }
   };
 
-  const handleDeleteHabit = async (habitId) => {
-    if (window.confirm('Are you sure you want to delete this habit?')) {
-      try {
-        await habitAPI.delete(habitId);
-        toast.success('Habit deleted');
-        fetchData();
-      } catch (error) {
-        toast.error(error.response?.data?.error || 'Error deleting habit');
-      }
+  const handleDeleteClick = (habit) => {
+    setDeletingHabit(habit);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingHabit) return;
+    try {
+      await habitAPI.delete(deletingHabit._id);
+      toast.success('Habit deleted');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Error deleting habit');
+    } finally {
+      setDeletingHabit(null);
     }
   };
 
@@ -124,7 +131,7 @@ function Dashboard({ setAuth }) {
                       habit={habit}
                       onComplete={handleCompleteHabit}
                       onEdit={setEditingHabit}
-                      onDelete={handleDeleteHabit}
+                      onDelete={handleDeleteClick}
                     />
                   ))}
                 </div>
@@ -170,6 +177,14 @@ function Dashboard({ setAuth }) {
           }}
         />
       )}
+
+      {deletingHabit && (
+        <DeleteConfirmModal
+          itemName={deletingHabit.name}
+          onCancel={() => setDeletingHabit(null)}
+          onConfirm={confirmDelete}
+        />
+      )}
     </div>
   );
 }
@@ -213,7 +228,7 @@ function HabitCard({ habit, onComplete, onEdit, onDelete }) {
           ✏️
         </button>
         <button
-          onClick={() => onDelete(habit._id)}
+          onClick={() => onDelete(habit)}
           className="p-2 text-gray-400 hover:text-red-500 transition bg-slate-800 rounded-lg"
           title="Delete"
         >
