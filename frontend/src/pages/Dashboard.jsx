@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { habitAPI, analyticsAPI, aiAPI } from '../api';
 import AddHabitModal from '../components/AddHabitModal';
+import WeeklyChart from '../components/WeeklyChart';
 
 function Dashboard({ setAuth }) {
   const [habits, setHabits] = useState([]);
@@ -114,6 +115,8 @@ function Dashboard({ setAuth }) {
           </div>
 
           <div className="space-y-6">
+            <WeeklyChart />
+            
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
               <h3 className="text-xl font-bold text-white mb-4">AI Insights</h3>
               <div className="space-y-3">
