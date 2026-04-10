@@ -2,8 +2,24 @@ node_modules/
 .env
 dist/
 build/
-.DS_Store
+coverage/
+
+# Logs
+logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-COMPLETION_PLAN.md
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDE / Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
