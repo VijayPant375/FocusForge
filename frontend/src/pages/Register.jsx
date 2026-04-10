@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../api';
+import toast from 'react-hot-toast';
 
 function Register({ setAuth }) {
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
@@ -18,6 +19,7 @@ function Register({ setAuth }) {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       setAuth(true);
+      toast.success('Account created successfully!');
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed');

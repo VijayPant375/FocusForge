@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -17,7 +18,9 @@ function App() {
   };
 
   return (
-    <Router>
+    <>
+      <Toaster position="top-right" />
+      <Router>
       <Routes>
         <Route path="/login" element={<Login setAuth={setIsAuthenticated} />} />
         <Route path="/register" element={<Register setAuth={setIsAuthenticated} />} />
@@ -32,6 +35,7 @@ function App() {
         <Route path="/" element={<Navigate to="/dashboard" />} />
       </Routes>
     </Router>
+    </>
   );
 }
 

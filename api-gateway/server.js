@@ -19,69 +19,34 @@ app.get('/health', (req, res) => {
   res.json({ status: 'API Gateway is running' });
 });
 
-app.use('/api/users', async (req, res) => {
+const forwardRequest = async (serviceUrl, req, res) => {
   try {
     const response = await axios({
       method: req.method,
-      url: `${USER_SERVICE}${req.path}`,
+      url: `${serviceUrl}${req.path}`,
       data: req.body,
-      headers: { authorization: req.headers.authorization }
+      headers: { authorization: req.headers.authorization },
+      timeout: 8000 // 8 second timeout
     });
     res.status(response.status).json(response.data);
   } catch (error) {
+    console.error(`Gateway Error [${serviceUrl}]:`, error.message);
+    if (error.code === 'ECONNABORTED') {
+      return res.status(504).json({ error: 'Service Timeout - Please try again later' });
+    }
+    if (error.code === 'ECONNREFUSED') {
+      return res.status(503).json({ error: 'Service Offline - Maintenance in progress' });
+    }
     res.status(error.response?.status || 500).json({
-      error: error.response?.data?.error || 'User service error'
+      error: error.response?.data?.error || 'Internal Gateway Error'
     });
   }
-});
+};
 
-app.use('/api/habits', async (req, res) => {
-  try {
-    const response = await axios({
-      method: req.method,
-      url: `${HABIT_SERVICE}${req.path}`,
-      data: req.body,
-      headers: { authorization: req.headers.authorization }
-    });
-    res.status(response.status).json(response.data);
-  } catch (error) {
-    res.status(error.response?.status || 500).json({
-      error: error.response?.data?.error || 'Habit service error'
-    });
-  }
-});
-
-app.use('/api/analytics', async (req, res) => {
-  try {
-    const response = await axios({
-      method: req.method,
-      url: `${ANALYTICS_SERVICE}${req.path}`,
-      data: req.body,
-      headers: { authorization: req.headers.authorization }
-    });
-    res.status(response.status).json(response.data);
-  } catch (error) {
-    res.status(error.response?.status || 500).json({
-      error: error.response?.data?.error || 'Analytics service error'
-    });
-  }
-});
-
-app.use('/api/ai', async (req, res) => {
-  try {
-    const response = await axios({
-      method: req.method,
-      url: `${AI_SERVICE}${req.path}`,
-      data: req.body,
-      headers: { authorization: req.headers.authorization }
-    });
-    res.status(response.status).json(response.data);
-  } catch (error) {
-    res.status(error.response?.status || 500).json({
-      error: error.response?.data?.error || 'AI service error'
-    });
-  }
-});
+app.use('/api/users', (req, res) => forwardRequest(USER_SERVICE, req, res));
+app.use('/api/habits', (req, res) => forwardRequest(HABIT_SERVICE, req, res));
+app.use('/api/analytics', (req, res) => forwardRequest(ANALYTICS_SERVICE, req, res));
+app.use('/api/ai', (req, res) => forwardRequest(AI_SERVICE, req, res));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

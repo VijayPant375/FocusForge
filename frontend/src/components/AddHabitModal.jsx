@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { habitAPI } from '../api';
+import toast from 'react-hot-toast';
 
 function AddHabitModal({ onClose, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -23,6 +24,7 @@ function AddHabitModal({ onClose, onSuccess }) {
     setLoading(true);
     try {
       await habitAPI.create(formData);
+      toast.success('Habit created successfully! 🌱');
       onSuccess(); // Close modal and refresh data
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to create habit');

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { habitAPI } from '../api';
+import toast from 'react-hot-toast';
 
 function EditHabitModal({ habit, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -34,6 +35,7 @@ function EditHabitModal({ habit, onClose, onSuccess }) {
     setLoading(true);
     try {
       await habitAPI.update(habit._id, formData);
+      toast.success('Habit updated! ✨');
       onSuccess();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to update habit');

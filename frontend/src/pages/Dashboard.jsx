@@ -4,6 +4,7 @@ import { habitAPI, analyticsAPI, aiAPI } from '../api';
 import AddHabitModal from '../components/AddHabitModal';
 import WeeklyChart from '../components/WeeklyChart';
 import EditHabitModal from '../components/EditHabitModal';
+import toast from 'react-hot-toast';
 
 function Dashboard({ setAuth }) {
   const [habits, setHabits] = useState([]);
@@ -48,9 +49,10 @@ function Dashboard({ setAuth }) {
   const handleCompleteHabit = async (habitId) => {
     try {
       await habitAPI.complete(habitId);
+      toast.success('Habit completed! 🎉');
       fetchData();
     } catch (error) {
-      alert(error.response?.data?.error || 'Error completing habit');
+      toast.error(error.response?.data?.error || 'Error completing habit');
     }
   };
 
@@ -58,9 +60,10 @@ function Dashboard({ setAuth }) {
     if (window.confirm('Are you sure you want to delete this habit?')) {
       try {
         await habitAPI.delete(habitId);
+        toast.success('Habit deleted');
         fetchData();
       } catch (error) {
-        alert(error.response?.data?.error || 'Error deleting habit');
+        toast.error(error.response?.data?.error || 'Error deleting habit');
       }
     }
   };
