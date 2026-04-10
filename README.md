@@ -1,4 +1,4 @@
-# Smart Habit & Focus Tracker with AI Insights
+# FocusForge: Smart Habit & Focus Tracker with AI Insights
 
 A modern full-stack microservices application for tracking habits and receiving AI-powered insights.
 

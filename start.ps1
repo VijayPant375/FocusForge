@@ -1,5 +1,5 @@
 Write-Host "======================================"
-Write-Host "Starting Smart Habit Tracker"
+Write-Host "Starting FocusForge"
 Write-Host "======================================"
 
 $services = @("api-gateway", "user-service", "habit-service", "analytics-service", "ai-service", "frontend")

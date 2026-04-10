@@ -1,7 +1,7 @@
 {
   "name": "api-gateway",
   "version": "1.0.0",
-  "description": "API Gateway for Smart Habit Tracker",
+  "description": "API Gateway for FocusForge",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

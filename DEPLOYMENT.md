@@ -1,4 +1,4 @@
-# Smart Habit Tracker - Deployment Guide
+# FocusForge - Deployment Guide
 
 This document outlines how to deploy the Microservices architecture to **Render.com**.
 

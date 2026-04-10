@@ -1,4 +1,4 @@
-# Smart Habit Tracker - Testing Guide
+# FocusForge - Testing Guide
 
 ## Manual Testing & Health Checks
 
