@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { habitAPI, analyticsAPI, aiAPI } from '../api';
+import AddHabitModal from '../components/AddHabitModal';
 
 function Dashboard({ setAuth }) {
   const [habits, setHabits] = useState([]);
@@ -127,6 +128,16 @@ function Dashboard({ setAuth }) {
           </div>
         </div>
       </div>
+
+      {showAddModal && (
+        <AddHabitModal
+          onClose={() => setShowAddModal(false)}
+          onSuccess={() => {
+            setShowAddModal(false);
+            fetchData();
+          }}
+        />
+      )}
     </div>
   );
 }
