@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { habitAPI, analyticsAPI, aiAPI } from '../api';
 import AddHabitModal from '../components/AddHabitModal';
 import WeeklyChart from '../components/WeeklyChart';
+import EditHabitModal from '../components/EditHabitModal';
 
 function Dashboard({ setAuth }) {
   const [habits, setHabits] = useState([]);
@@ -10,6 +11,7 @@ function Dashboard({ setAuth }) {
   const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingHabit, setEditingHabit] = useState(null);
   const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -49,6 +51,17 @@ function Dashboard({ setAuth }) {
       fetchData();
     } catch (error) {
       alert(error.response?.data?.error || 'Error completing habit');
+    }
+  };
+
+  const handleDeleteHabit = async (habitId) => {
+    if (window.confirm('Are you sure you want to delete this habit?')) {
+      try {
+        await habitAPI.delete(habitId);
+        fetchData();
+      } catch (error) {
+        alert(error.response?.data?.error || 'Error deleting habit');
+      }
     }
   };
 
@@ -107,6 +120,8 @@ function Dashboard({ setAuth }) {
                       key={habit._id}
                       habit={habit}
                       onComplete={handleCompleteHabit}
+                      onEdit={setEditingHabit}
+                      onDelete={handleDeleteHabit}
                     />
                   ))}
                 </div>
@@ -141,6 +156,17 @@ function Dashboard({ setAuth }) {
           }}
         />
       )}
+
+      {editingHabit && (
+        <EditHabitModal
+          habit={editingHabit}
+          onClose={() => setEditingHabit(null)}
+          onSuccess={() => {
+            setEditingHabit(null);
+            fetchData();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -159,7 +185,7 @@ function StatCard({ title, value, icon }) {
   );
 }
 
-function HabitCard({ habit, onComplete }) {
+function HabitCard({ habit, onComplete, onEdit, onDelete }) {
   const today = new Date().toISOString().split('T')[0];
   const isCompletedToday = habit.completions.some(c => 
     new Date(c.date).toISOString().split('T')[0] === today
@@ -167,7 +193,7 @@ function HabitCard({ habit, onComplete }) {
 
   return (
     <div className="bg-slate-700 p-4 rounded-lg flex items-center justify-between">
-      <div className="flex-1">
+      <div className="flex-1 pr-4">
         <h4 className="text-white font-semibold text-lg">{habit.name}</h4>
         <p className="text-gray-400 text-sm">{habit.description}</p>
         <div className="flex gap-4 mt-2">
@@ -175,17 +201,33 @@ function HabitCard({ habit, onComplete }) {
           <span className="text-sm text-gray-300 capitalize">📁 {habit.category}</span>
         </div>
       </div>
-      <button
-        onClick={() => !isCompletedToday && onComplete(habit._id)}
-        disabled={isCompletedToday}
-        className={`px-6 py-2 rounded-lg transition ${
-          isCompletedToday
-            ? 'bg-green-500 text-white cursor-not-allowed'
-            : 'bg-primary hover:bg-purple-600 text-white'
-        }`}
-      >
-        {isCompletedToday ? '✓ Done' : 'Complete'}
-      </button>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onEdit(habit)}
+          className="p-2 text-gray-400 hover:text-white transition bg-slate-800 rounded-lg"
+          title="Edit"
+        >
+          ✏️
+        </button>
+        <button
+          onClick={() => onDelete(habit._id)}
+          className="p-2 text-gray-400 hover:text-red-500 transition bg-slate-800 rounded-lg"
+          title="Delete"
+        >
+          🗑️
+        </button>
+        <button
+          onClick={() => !isCompletedToday && onComplete(habit._id)}
+          disabled={isCompletedToday}
+          className={`px-6 py-2 ml-2 rounded-lg transition ${
+            isCompletedToday
+              ? 'bg-green-500 text-white cursor-not-allowed'
+              : 'bg-primary hover:bg-purple-600 text-white'
+          }`}
+        >
+          {isCompletedToday ? '✓ Done' : 'Complete'}
+        </button>
+      </div>
     </div>
   );
 }
