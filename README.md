@@ -2,6 +2,12 @@
 
 A modern full-stack microservices application for tracking habits and receiving AI-powered insights.
 
+## 🐳 Docker Setup
+docker-compose up --build
+docker-compose exec user-service npm run seed
+docker-compose exec habit-service npm run seed
+Access: http://localhost:5173
+
 ## Architecture
 
 ```mermaid
