@@ -6,7 +6,7 @@ import Dashboard from './pages/Dashboard';
 import { Toaster } from 'react-hot-toast';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('token'));
 
   useEffect(() => {
     const token = localStorage.getItem('token');
