@@ -28,7 +28,12 @@ export const habitAPI = {
   getAll: () => api.get('/habits'),
   update: (id, data) => api.put(`/habits/${id}`, data),
   delete: (id) => api.delete(`/habits/${id}`),
-  complete: (id) => api.post(`/habits/${id}/complete`),
+  complete: (id, data = {}) => api.post(`/habits/${id}/complete`, data),
+  // 2.1 Chains
+  setChain: (id, chainToId) => api.post(`/habits/${id}/chain`, { chainToId }),
+  removeChain: (id) => api.delete(`/habits/${id}/chain`),
+  // 2.4 Reminders
+  setReminder: (id, data) => api.put(`/habits/${id}/reminder`, data),
 };
 
 export const analyticsAPI = {

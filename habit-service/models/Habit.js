@@ -25,6 +25,18 @@ const habitSchema = new mongoose.Schema({
     enum: ['daily', 'weekly'],
     default: 'daily'
   },
+  // 2.1 Habit Chains
+  chainedTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Habit',
+    default: null
+  },
+  // 2.4 Reminders
+  reminder: {
+    enabled: { type: Boolean, default: false },
+    time: { type: String, default: '08:00' },
+    days: { type: [String], default: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] }
+  },
   completions: [{
     date: {
       type: Date,
@@ -33,6 +45,18 @@ const habitSchema = new mongoose.Schema({
     completed: {
       type: Boolean,
       default: true
+    },
+    // 2.5 Mood & Energy
+    mood: {
+      type: String,
+      enum: ['great', 'good', 'okay', 'tired', 'stressed', null],
+      default: null
+    },
+    energy: {
+      type: Number,
+      min: 1,
+      max: 10,
+      default: null
     }
   }],
   currentStreak: {
@@ -48,6 +72,7 @@ const habitSchema = new mongoose.Schema({
     default: Date.now
   }
 });
+
 
 habitSchema.methods.calculateStreak = function() {
   if (this.completions.length === 0) {

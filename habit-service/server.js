@@ -101,12 +101,66 @@ app.post('/:id/complete', authMiddleware, async (req, res) => {
     if (alreadyCompleted) {
       return res.status(400).json({ error: 'Already completed today' });
     }
-    
-    habit.completions.push({ date: today, completed: true });
+
+    // 2.5 Accept mood & energy with completion
+    const { mood, energy } = req.body;
+    habit.completions.push({ date: today, completed: true, mood: mood || null, energy: energy || null });
     habit.calculateStreak();
     await habit.save();
     
-    res.json({ message: 'Habit completed', habit });
+    // 2.1 If this habit has a chain, return the chained habit as a suggestion
+    let chainedHabit = null;
+    if (habit.chainedTo) {
+      chainedHabit = await Habit.findOne({ _id: habit.chainedTo, userId: req.userId });
+    }
+
+    res.json({ message: 'Habit completed', habit, chainedHabit });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 2.1 Habit Chain Routes
+app.post('/:id/chain', authMiddleware, async (req, res) => {
+  try {
+    const { chainToId } = req.body;
+    const habit = await Habit.findOneAndUpdate(
+      { _id: req.params.id, userId: req.userId },
+      { chainedTo: chainToId || null },
+      { new: true }
+    );
+    if (!habit) return res.status(404).json({ error: 'Habit not found' });
+    res.json({ message: 'Chain updated', habit });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/:id/chain', authMiddleware, async (req, res) => {
+  try {
+    const habit = await Habit.findOneAndUpdate(
+      { _id: req.params.id, userId: req.userId },
+      { chainedTo: null },
+      { new: true }
+    );
+    if (!habit) return res.status(404).json({ error: 'Habit not found' });
+    res.json({ message: 'Chain removed', habit });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 2.4 Reminder Settings
+app.put('/:id/reminder', authMiddleware, async (req, res) => {
+  try {
+    const { enabled, time, days } = req.body;
+    const habit = await Habit.findOneAndUpdate(
+      { _id: req.params.id, userId: req.userId },
+      { reminder: { enabled, time, days } },
+      { new: true }
+    );
+    if (!habit) return res.status(404).json({ error: 'Habit not found' });
+    res.json({ message: 'Reminder updated', habit });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
