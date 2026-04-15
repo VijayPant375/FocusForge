@@ -6,6 +6,15 @@ import WeeklyChart from '../components/WeeklyChart';
 import EditHabitModal from '../components/EditHabitModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import toast from 'react-hot-toast';
+import confetti from 'canvas-confetti';
+
+import AnimatedCounter from '../components/AnimatedCounter';
+import ThemeToggle from '../components/ThemeToggle';
+import SkeletonLoader from '../components/SkeletonLoader';
+import HabitHeatmap from '../components/HabitHeatmap';
+import RadialChart from '../components/RadialChart';
+import StreakFlame from '../components/StreakFlame';
+import CircularProgress from '../components/CircularProgress';
 
 function Dashboard({ setAuth }) {
   const [habits, setHabits] = useState([]);
@@ -51,6 +60,12 @@ function Dashboard({ setAuth }) {
   const handleCompleteHabit = async (habitId) => {
     try {
       await habitAPI.complete(habitId);
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#8b5cf6', '#ec4899', '#38bdf8']
+      });
       toast.success('Habit completed! 🎉');
       fetchData();
     } catch (error) {
@@ -77,22 +92,38 @@ function Dashboard({ setAuth }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="min-h-screen relative shadow-none">
+        <div className="mesh-bg"></div>
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <SkeletonLoader type="stat" /><SkeletonLoader type="stat" />
+            <SkeletonLoader type="stat" /><SkeletonLoader type="stat" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-4">
+              <SkeletonLoader type="habit" /><SkeletonLoader type="habit" />
+            </div>
+            <SkeletonLoader type="chart" />
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-900">
-      <nav className="bg-slate-800 border-b border-slate-700 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-white">FocusForge</h1>
-          <div className="flex items-center gap-4">
-            <span className="text-gray-300">Hi, {user.name}</span>
+    <div className="min-h-screen relative shadow-none">
+      <div className="mesh-bg"></div>
+      <nav className="glass-panel sticky top-0 z-40 mb-8 mx-6 mt-4 px-6 py-4 flex justify-between items-center transition-all animate-fade-in-up">
+        <div className="flex justify-between items-center w-full max-w-7xl mx-auto">
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>FocusForge</h1>
+          <div className="flex items-center gap-6">
+            <span style={{ color: 'var(--text-secondary)' }} className="hidden sm:inline-block">
+              Hi, <span className="font-semibold" style={{ color: 'var(--accent-1)' }}>{user.name}</span>
+            </span>
+            <ThemeToggle />
             <button
               onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
+              className="px-4 py-2 rounded-lg transition-colors border text-sm font-medium border-[var(--glass-border)] hover:bg-red-500/10 text-red-500"
             >
               Logout
             </button>
@@ -100,7 +131,7 @@ function Dashboard({ setAuth }) {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-4 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <StatCard title="Total Habits" value={stats?.totalHabits || 0} icon="🎯" />
           <StatCard title="Completed Today" value={stats?.completedToday || 0} icon="✅" />
@@ -110,45 +141,68 @@ function Dashboard({ setAuth }) {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+            <div className="glass-panel p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-white">Your Habits</h2>
+                <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Your Habits</h2>
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="bg-primary hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition"
+                  className="glass-button px-4 py-2 rounded-lg transition flex items-center gap-2"
                 >
-                  + Add Habit
+                  <span className="text-lg">+</span> Add Habit
                 </button>
               </div>
 
               {habits.length === 0 ? (
-                <p className="text-gray-400 text-center py-8">No habits yet. Create your first one!</p>
+                <p className="text-center py-12" style={{ color: 'var(--text-secondary)' }}>
+                  No habits yet. Let's create your first one!
+                </p>
               ) : (
                 <div className="space-y-4">
-                  {habits.map(habit => (
-                    <HabitCard
-                      key={habit._id}
-                      habit={habit}
-                      onComplete={handleCompleteHabit}
-                      onEdit={setEditingHabit}
-                      onDelete={handleDeleteClick}
-                    />
+                  {habits.map((habit, index) => (
+                    <div 
+                      key={habit._id} 
+                      className="animate-fade-in-up flex" 
+                      style={{ animationDelay: `${0.1 * (index + 1)}s` }}
+                    >
+                      <HabitCard
+                        habit={habit}
+                        onComplete={handleCompleteHabit}
+                        onEdit={setEditingHabit}
+                        onDelete={handleDeleteClick}
+                      />
+                    </div>
                   ))}
                 </div>
               )}
+
+              {/* Habit Heatmap */}
+              <div className="mt-8 border-t border-[var(--glass-border)] pt-6">
+                <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Consistency Heatmap</h3>
+                <HabitHeatmap habits={habits} />
+              </div>
             </div>
           </div>
 
           <div className="space-y-6">
-            <WeeklyChart />
+            <div className="glass-panel p-6 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+               <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Weekly Overview</h3>
+               <WeeklyChart />
+            </div>
             
-            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-              <h3 className="text-xl font-bold text-white mb-4">AI Insights</h3>
+            <div className="glass-panel p-6 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+               <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Category Spread</h3>
+               <RadialChart habits={habits} />
+            </div>
+
+            <div className="glass-panel p-6 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+              <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>AI Insights</h3>
               <div className="space-y-3">
                 {insights.map((insight, index) => (
-                  <div key={index} className="bg-slate-700 p-4 rounded-lg">
-                    <p className="text-2xl mb-2">{insight.icon}</p>
-                    <p className="text-gray-300 text-sm">{insight.message}</p>
+                  <div key={index} className="glass-card p-4 glow-on-hover">
+                    <div className="flex items-start gap-3">
+                      <p className="text-2xl">{insight.icon}</p>
+                      <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{insight.message}</p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -190,15 +244,31 @@ function Dashboard({ setAuth }) {
 }
 
 function StatCard({ title, value, icon }) {
+  const isCompletionRate = title === "Completion Rate";
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+
   return (
-    <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-gray-400 text-sm mb-1">{title}</p>
-          <p className="text-3xl font-bold text-white">{value}</p>
+    <div className="glass-card p-6 relative overflow-hidden group">
+      <div className="flex items-center justify-between relative z-10 w-full">
+        <div className="flex-1">
+          <p className="text-sm mb-1 font-medium" style={{ color: 'var(--text-secondary)' }}>{title}</p>
+          <div className="mt-2">
+            {isCompletionRate ? (
+              <div className="flex justify-center my-2">
+                <CircularProgress percentage={numValue} size={60} strokeWidth={6} />
+              </div>
+            ) : (
+              <p className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                <AnimatedCounter value={value} />
+              </p>
+            )}
+          </div>
         </div>
-        <div className="text-4xl">{icon}</div>
+        {!isCompletionRate && (
+          <div className="text-4xl filter drop-shadow-md group-hover:scale-110 transition-transform duration-300">{icon}</div>
+        )}
       </div>
+      <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-[var(--accent-1)] opacity-5 rounded-full blur-2xl group-hover:opacity-20 transition-opacity"></div>
     </div>
   );
 }
@@ -210,26 +280,33 @@ function HabitCard({ habit, onComplete, onEdit, onDelete }) {
   );
 
   return (
-    <div className="bg-slate-700 p-4 rounded-lg flex items-center justify-between">
+    <div className="glass-card p-4 flex items-center justify-between w-full group">
       <div className="flex-1 pr-4">
-        <h4 className="text-white font-semibold text-lg">{habit.name}</h4>
-        <p className="text-gray-400 text-sm">{habit.description}</p>
-        <div className="flex gap-4 mt-2">
-          <span className="text-sm text-gray-300">🔥 Streak: {habit.currentStreak} days</span>
-          <span className="text-sm text-gray-300 capitalize">📁 {habit.category}</span>
+        <h4 className="font-semibold text-lg" style={{ color: 'var(--text-primary)' }}>{habit.name}</h4>
+        <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{habit.description}</p>
+        <div className="flex gap-4 mt-3">
+          <span className="text-xs font-medium pl-1 pr-3 py-1 rounded-md glass-card flex items-center gap-1" style={{ color: 'var(--accent-1)' }}>
+            <StreakFlame streak={habit.currentStreak} />
+            <span className="mt-1">Streak: <AnimatedCounter value={habit.currentStreak} /></span>
+          </span>
+          <span className="text-xs font-medium px-2 py-1 rounded-md glass-card capitalize" style={{ color: 'var(--text-secondary)' }}>
+            📁 {habit.category}
+          </span>
         </div>
       </div>
       <div className="flex items-center gap-2">
         <button
           onClick={() => onEdit(habit)}
-          className="p-2 text-gray-400 hover:text-white transition bg-slate-800 rounded-lg"
+          className="p-2 transition-colors rounded-lg hover:bg-white/10"
+          style={{ color: 'var(--text-secondary)' }}
           title="Edit"
         >
           ✏️
         </button>
         <button
           onClick={() => onDelete(habit)}
-          className="p-2 text-gray-400 hover:text-red-500 transition bg-slate-800 rounded-lg"
+          className="p-2 transition-colors rounded-lg hover:bg-red-500/10 hover:text-red-500"
+          style={{ color: 'var(--text-secondary)' }}
           title="Delete"
         >
           🗑️
@@ -237,10 +314,10 @@ function HabitCard({ habit, onComplete, onEdit, onDelete }) {
         <button
           onClick={() => !isCompletedToday && onComplete(habit._id)}
           disabled={isCompletedToday}
-          className={`px-6 py-2 ml-2 rounded-lg transition ${
+          className={`px-5 py-2 ml-2 rounded-lg transition-all font-medium ${
             isCompletedToday
-              ? 'bg-green-500 text-white cursor-not-allowed'
-              : 'bg-primary hover:bg-purple-600 text-white'
+              ? 'bg-green-500/20 text-green-600 dark:text-green-400 cursor-not-allowed border border-green-500/30 shadow-[0_0_15px_rgba(34,197,94,0.1)]'
+              : 'glass-button'
           }`}
         >
           {isCompletedToday ? '✓ Done' : 'Complete'}

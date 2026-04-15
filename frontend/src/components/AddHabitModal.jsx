@@ -25,7 +25,7 @@ function AddHabitModal({ onClose, onSuccess }) {
     try {
       await habitAPI.create(formData);
       toast.success('Habit created successfully! 🌱');
-      onSuccess(); // Close modal and refresh data
+      onSuccess();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to create habit');
     } finally {
@@ -38,11 +38,11 @@ function AddHabitModal({ onClose, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 w-full max-w-md">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="glass-panel p-8 w-full max-w-md animate-fade-in-up">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-white">Add New Habit</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
+          <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Add New Habit</h2>
+          <button onClick={onClose} className="p-2 transition-colors hover:bg-white/10 rounded-full" style={{ color: 'var(--text-secondary)' }}>
             ✕
           </button>
         </div>
@@ -55,35 +55,38 @@ function AddHabitModal({ onClose, onSuccess }) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-gray-300 text-sm font-medium mb-1">Name</label>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Name</label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
+              className="w-full px-4 py-3 bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-lg outline-none transition-all glow-border"
+              style={{ color: 'var(--text-primary)' }}
               placeholder="e.g., Read 10 pages"
             />
           </div>
 
           <div>
-            <label className="block text-gray-300 text-sm font-medium mb-1">Description</label>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Description</label>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleChange}
-              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500 h-24 resize-none"
+              className="w-full px-4 py-3 bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-lg outline-none transition-all glow-border h-24 resize-none"
+              style={{ color: 'var(--text-primary)' }}
               placeholder="Optional description"
             />
           </div>
 
           <div>
-            <label className="block text-gray-300 text-sm font-medium mb-1">Category</label>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Category</label>
             <select
               name="category"
               value={formData.category}
               onChange={handleChange}
-              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
+              className="w-full px-4 py-3 bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-lg outline-none transition-all glow-border appearance-none"
+              style={{ color: 'var(--text-primary)' }}
              >
               <option value="health">Health</option>
               <option value="productivity">Productivity</option>
@@ -95,8 +98,8 @@ function AddHabitModal({ onClose, onSuccess }) {
           </div>
 
           <div>
-           <label className="block text-gray-300 text-sm font-medium mb-2">Frequency</label>
-           <div className="flex space-x-4">
+           <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Frequency</label>
+           <div className="flex space-x-6">
              <label className="flex items-center space-x-2 cursor-pointer">
                <input
                  type="radio"
@@ -104,9 +107,9 @@ function AddHabitModal({ onClose, onSuccess }) {
                  value="daily"
                  checked={formData.frequency === 'daily'}
                  onChange={handleChange}
-                 className="text-purple-500 form-radio focus:ring-purple-500 bg-slate-700 border-slate-600"
+                 className="text-[var(--accent-1)] focus:ring-[var(--accent-1)]"
                />
-               <span className="text-gray-300">Daily</span>
+               <span style={{ color: 'var(--text-secondary)' }}>Daily</span>
              </label>
              <label className="flex items-center space-x-2 cursor-pointer">
                <input
@@ -115,25 +118,26 @@ function AddHabitModal({ onClose, onSuccess }) {
                  value="weekly"
                  checked={formData.frequency === 'weekly'}
                  onChange={handleChange}
-                 className="text-purple-500 form-radio focus:ring-purple-500 bg-slate-700 border-slate-600"
+                 className="text-[var(--accent-1)] focus:ring-[var(--accent-1)]"
                />
-               <span className="text-gray-300">Weekly</span>
+               <span style={{ color: 'var(--text-secondary)' }}>Weekly</span>
              </label>
            </div>
           </div>
 
-          <div className="flex justify-end gap-3 mt-6">
+          <div className="flex justify-end gap-3 mt-8">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+              className="px-5 py-2 rounded-lg transition-colors border border-[var(--glass-border)] hover:bg-white/10"
+              style={{ color: 'var(--text-secondary)' }}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition disabled:bg-purple-600/50"
+              className="glass-button px-5 py-2 rounded-lg font-medium"
             >
               {loading ? 'Saving...' : 'Add Habit'}
             </button>

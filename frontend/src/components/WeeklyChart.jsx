@@ -34,48 +34,45 @@ function WeeklyChart() {
 
   if (loading) {
     return (
-      <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 h-[320px] flex items-center justify-center">
-        <div className="text-gray-400">Loading chart...</div>
+      <div className="h-[250px] flex items-center justify-center">
+        <div style={{ color: 'var(--text-secondary)' }}>Loading chart...</div>
       </div>
     );
   }
 
   return (
-    <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-      <h3 className="text-xl font-bold text-white mb-4">Weekly Progress</h3>
-      <div className="h-64 mt-4">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-            <XAxis 
-              dataKey="day" 
-              stroke="#94a3b8" 
-              tick={{fill: '#94a3b8'}} 
-              tickLine={false} 
-              axisLine={false} 
-            />
-            <YAxis 
-              stroke="#94a3b8" 
-              tick={{fill: '#94a3b8'}} 
-              tickLine={false} 
-              axisLine={false} 
-              allowDecimals={false} 
-            />
-            <Tooltip 
-              contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc', borderRadius: '8px' }}
-              itemStyle={{ color: '#8b5cf6' }}
-              cursor={{fill: '#334155'}}
-            />
-            <Bar 
-              dataKey="completed" 
-              fill="#8b5cf6" 
-              radius={[4, 4, 0, 0]} 
-              name="Completed Habits" 
-              maxBarSize={40}
-            />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+    <div className="h-64 mt-2">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" vertical={false} opacity={0.5} />
+          <XAxis 
+            dataKey="day" 
+            stroke="var(--text-secondary)" 
+            tick={{fill: 'var(--text-secondary)'}} 
+            tickLine={false} 
+            axisLine={false} 
+          />
+          <YAxis 
+            stroke="var(--text-secondary)" 
+            tick={{fill: 'var(--text-secondary)'}} 
+            tickLine={false} 
+            axisLine={false} 
+            allowDecimals={false} 
+          />
+          <Tooltip 
+            contentStyle={{ backgroundColor: 'var(--glass-bg)', borderColor: 'var(--glass-border)', color: 'var(--text-primary)', borderRadius: '8px' }}
+            itemStyle={{ color: 'var(--accent-1)' }}
+            cursor={{fill: 'var(--glass-border)', opacity: 0.2}}
+          />
+          <Bar 
+            dataKey="completed" 
+            fill="var(--accent-1)" 
+            radius={[4, 4, 0, 0]} 
+            name="Completed Habits" 
+            maxBarSize={40}
+          />
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
