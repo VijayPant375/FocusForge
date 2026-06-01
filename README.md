@@ -573,6 +573,8 @@ If you extend the project:
 
 <div align="center">
 
-Built for habit consistency, focus, and momentum.
+**Built with ❤️ by [VijayPant375](https://github.com/VijayPant375)**
+
+⭐ Star this repo if you find it helpful!
 
 </div>
