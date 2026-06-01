@@ -35,6 +35,7 @@ services:
       - PORT=5004
       - MONGODB_URI=${HABIT_DB_URI}
       - JWT_SECRET=${JWT_SECRET}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     depends_on: [mongodb]
   api-gateway:
     build: ./api-gateway

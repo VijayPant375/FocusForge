@@ -8,7 +8,6 @@ import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import toast from 'react-hot-toast';
 import confetti from 'canvas-confetti';
 
-// Phase 1
 import AnimatedCounter from '../components/AnimatedCounter';
 import ThemeToggle from '../components/ThemeToggle';
 import SkeletonLoader from '../components/SkeletonLoader';
@@ -17,7 +16,6 @@ import RadialChart from '../components/RadialChart';
 import StreakFlame from '../components/StreakFlame';
 import CircularProgress from '../components/CircularProgress';
 
-// Phase 2
 import PomodoroTimer from '../components/PomodoroTimer';
 import MoodCheckInModal from '../components/MoodCheckInModal';
 import TemplatesModal from '../components/TemplatesModal';
@@ -30,14 +28,15 @@ function Dashboard({ setAuth }) {
   const [habits, setHabits] = useState([]);
   const [stats, setStats] = useState(null);
   const [insights, setInsights] = useState([]);
+  const [failurePatterns, setFailurePatterns] = useState([]);
+  const [failurePatternHabit, setFailurePatternHabit] = useState('');
+  const [failurePatternsLoading, setFailurePatternsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Modals - Phase 1
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingHabit, setEditingHabit] = useState(null);
   const [deletingHabit, setDeletingHabit] = useState(null);
 
-  // Modals - Phase 2
   const [pomodoroHabit, setPomodoroHabit] = useState(null);
   const [moodHabit, setMoodHabit] = useState(null);
   const [chainHabit, setChainHabit] = useState(null);
@@ -49,18 +48,70 @@ function Dashboard({ setAuth }) {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const getFailurePatternTarget = (habitList) => {
+    const withHistory = habitList.filter((habit) => Array.isArray(habit.completions) && habit.completions.length > 0);
+    if (withHistory.length === 0) {
+      return null;
+    }
+
+    return [...withHistory].sort((a, b) => {
+      const completionDiff = b.completions.length - a.completions.length;
+      if (completionDiff !== 0) {
+        return completionDiff;
+      }
+
+      return (a.currentStreak || 0) - (b.currentStreak || 0);
+    })[0];
+  };
+
+  const fetchFailurePatterns = async (habitList) => {
+    const targetHabit = getFailurePatternTarget(habitList);
+    if (!targetHabit) {
+      setFailurePatterns([]);
+      setFailurePatternHabit('');
+      return;
+    }
+
+    setFailurePatternsLoading(true);
+
+    try {
+      const response = await aiAPI.getFailurePatterns({
+        habitId: targetHabit._id,
+        habitName: targetHabit.name,
+        completionHistory: targetHabit.completions.map((completion) => ({
+          date: new Date(completion.date).toISOString().split('T')[0],
+          completed: completion.completed !== false,
+        })),
+      });
+
+      setFailurePatterns(response.data.patterns || []);
+      setFailurePatternHabit(response.data.habitName || targetHabit.name);
+    } catch (error) {
+      console.error('Error fetching failure patterns:', error);
+      setFailurePatterns([]);
+      setFailurePatternHabit(targetHabit.name);
+    } finally {
+      setFailurePatternsLoading(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
       const [habitsRes, statsRes, insightsRes] = await Promise.all([
         habitAPI.getAll(),
         analyticsAPI.getStats(),
-        aiAPI.getInsights()
+        aiAPI.getInsights(),
       ]);
-      setHabits(habitsRes.data.habits);
+
+      const nextHabits = habitsRes.data.habits;
+      setHabits(nextHabits);
       setStats(statsRes.data);
-      setInsights(insightsRes.data.insights);
+      setInsights(insightsRes.data.insights || []);
+      await fetchFailurePatterns(nextHabits);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -75,7 +126,6 @@ function Dashboard({ setAuth }) {
     navigate('/login');
   };
 
-  // Phase 2: Mood check-in before completing
   const handleCompleteClick = (habit) => {
     setMoodHabit(habit);
   };
@@ -83,10 +133,27 @@ function Dashboard({ setAuth }) {
   const handleCompleteWithMood = async (habitId, moodData) => {
     try {
       const res = await habitAPI.complete(habitId, moodData);
-      confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 }, colors: ['#8b5cf6', '#ec4899', '#38bdf8'] });
-      toast.success('Habit completed! 🎉');
+      confetti({
+        particleCount: 80,
+        spread: 60,
+        origin: { y: 0.6 },
+        colors: ['#8b5cf6', '#ec4899', '#38bdf8'],
+      });
+      toast.success('Habit completed!');
+
+      const coachingRes = await aiAPI.getCoachingMessage({
+        habitName: res.data?.habit?.name || habits.find((habit) => habit._id === habitId)?.name || 'your habit',
+        status: 'completed',
+        streak: res.data?.habit?.currentStreak || 0,
+        mode: 'supportive',
+      });
+
+      if (coachingRes.data?.message) {
+        toast(coachingRes.data.message, { icon: '🤖' });
+      }
+
       fetchData();
-      // Chain suggestion
+
       if (res.data?.chainedHabit) {
         setChainSuggestion(res.data.chainedHabit);
         setTimeout(() => setChainSuggestion(null), 6000);
@@ -100,6 +167,7 @@ function Dashboard({ setAuth }) {
 
   const confirmDelete = async () => {
     if (!deletingHabit) return;
+
     try {
       await habitAPI.delete(deletingHabit._id);
       toast.success('Habit deleted');
@@ -117,12 +185,15 @@ function Dashboard({ setAuth }) {
         <div className="mesh-bg"></div>
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <SkeletonLoader type="stat" /><SkeletonLoader type="stat" />
-            <SkeletonLoader type="stat" /><SkeletonLoader type="stat" />
+            <SkeletonLoader type="stat" />
+            <SkeletonLoader type="stat" />
+            <SkeletonLoader type="stat" />
+            <SkeletonLoader type="stat" />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-4">
-              <SkeletonLoader type="habit" /><SkeletonLoader type="habit" />
+              <SkeletonLoader type="habit" />
+              <SkeletonLoader type="habit" />
             </div>
             <SkeletonLoader />
           </div>
@@ -135,10 +206,9 @@ function Dashboard({ setAuth }) {
     <div className="min-h-screen relative">
       <div className="mesh-bg"></div>
 
-      {/* Navbar */}
       <nav className="glass-panel sticky top-0 z-40 mb-6 mx-4 mt-3 px-5 py-3 flex items-center gap-3 animate-fade-in-up">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <h1 className="text-xl font-bold flex-shrink-0" style={{ color: 'var(--text-primary)' }}>⚡ FocusForge</h1>
+          <h1 className="text-xl font-bold flex-shrink-0" style={{ color: 'var(--text-primary)' }}>FocusForge</h1>
           <div className="flex-1 min-w-0 hidden lg:block">
             <XPBar habits={habits} />
           </div>
@@ -156,7 +226,6 @@ function Dashboard({ setAuth }) {
         </div>
       </nav>
 
-      {/* Chain suggestion toast */}
       {chainSuggestion && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-30 animate-fade-in-up">
           <div className="glass-panel px-5 py-3 flex items-center gap-3 shadow-lg border border-purple-500/30">
@@ -176,7 +245,6 @@ function Dashboard({ setAuth }) {
       )}
 
       <div className="max-w-7xl mx-auto px-4 pb-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-        {/* Stats grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <StatCard title="Total Habits" value={stats?.totalHabits || 0} icon="🎯" />
           <StatCard title="Completed Today" value={stats?.completedToday || 0} icon="✅" />
@@ -185,13 +253,16 @@ function Dashboard({ setAuth }) {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Habits panel */}
           <div className="lg:col-span-2">
             <div className="glass-panel p-5">
               <div className="flex flex-wrap justify-between items-center mb-5 gap-2">
                 <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Your Habits</h2>
                 <div className="flex gap-2">
-                  <button onClick={() => setShowTemplates(true)} className="px-3 py-1.5 rounded-lg border border-[var(--glass-border)] hover:bg-white/10 transition-colors text-sm flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
+                  <button
+                    onClick={() => setShowTemplates(true)}
+                    className="px-3 py-1.5 rounded-lg border border-[var(--glass-border)] hover:bg-white/10 transition-colors text-sm flex items-center gap-1"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
                     📋 Templates
                   </button>
                   <button onClick={() => setShowAddModal(true)} className="glass-button px-4 py-1.5 rounded-lg text-sm flex items-center gap-1">
@@ -224,7 +295,6 @@ function Dashboard({ setAuth }) {
                 </div>
               )}
 
-              {/* Heatmap */}
               {habits.length > 0 && (
                 <div className="mt-6 border-t pt-5" style={{ borderColor: 'var(--glass-border)' }}>
                   <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Consistency Heatmap</h3>
@@ -234,7 +304,6 @@ function Dashboard({ setAuth }) {
             </div>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-5">
             <div className="glass-panel p-5 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
               <h3 className="text-base font-bold mb-3" style={{ color: 'var(--text-primary)' }}>Weekly Overview</h3>
@@ -257,22 +326,48 @@ function Dashboard({ setAuth }) {
                 ))}
               </div>
             </div>
+
+            <div className="glass-panel p-5 animate-fade-in-up" style={{ animationDelay: '0.35s' }}>
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <h3 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>Failure Patterns</h3>
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                    {failurePatternHabit ? `Analyzing ${failurePatternHabit}` : 'Analyzing habit history'}
+                  </p>
+                </div>
+                <span className="text-lg">🧠</span>
+              </div>
+
+              {failurePatternsLoading ? (
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Reading completion history...</p>
+              ) : failurePatterns.length > 0 ? (
+                <div className="space-y-2">
+                  {failurePatterns.map((pattern, index) => (
+                    <div key={index} className="glass-card p-3">
+                      <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{pattern}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  Complete a few habits over time and this section will highlight where misses tend to cluster.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Phase 2: Voice Mic Button */}
       <VoiceMicButton
         habits={habits}
         onRefresh={fetchData}
         onShowStats={() => setShowBadges(true)}
       />
 
-      {/* All Modals */}
       {showAddModal && <AddHabitModal onClose={() => setShowAddModal(false)} onSuccess={() => { setShowAddModal(false); fetchData(); }} />}
       {editingHabit && <EditHabitModal habit={editingHabit} onClose={() => setEditingHabit(null)} onSuccess={() => { setEditingHabit(null); fetchData(); }} />}
       {deletingHabit && <DeleteConfirmModal itemName={deletingHabit.name} onCancel={() => setDeletingHabit(null)} onConfirm={confirmDelete} />}
-      {moodHabit && <MoodCheckInModal habit={moodHabit} onClose={() => setMoodHabit(null)} onSuccess={(moodData) => { const h = moodHabit; setMoodHabit(null); handleCompleteWithMood(h._id, moodData || {}); }} />}
+      {moodHabit && <MoodCheckInModal habit={moodHabit} onClose={() => setMoodHabit(null)} onSuccess={(moodData) => { const currentHabit = moodHabit; setMoodHabit(null); handleCompleteWithMood(currentHabit._id, moodData || {}); }} />}
       {pomodoroHabit && <PomodoroTimer habitName={pomodoroHabit.name} onClose={() => setPomodoroHabit(null)} />}
       {showTemplates && <TemplatesModal onClose={() => setShowTemplates(false)} onSuccess={() => { setShowTemplates(false); fetchData(); }} />}
       {chainHabit && <HabitChainModal habit={chainHabit} habits={habits} onClose={() => setChainHabit(null)} onSuccess={() => { setChainHabit(null); fetchData(); }} />}
@@ -314,10 +409,8 @@ function StatCard({ title, value, icon }) {
 
 function HabitCard({ habit, habits, onComplete, onEdit, onDelete, onTimer, onChain }) {
   const today = new Date().toISOString().split('T')[0];
-  const isCompletedToday = habit.completions.some(c =>
-    new Date(c.date).toISOString().split('T')[0] === today
-  );
-  const chainedName = habit.chainedTo ? habits.find(h => h._id === habit.chainedTo)?._name : null;
+  const completions = Array.isArray(habit.completions) ? habit.completions : [];
+  const isCompletedToday = completions.some((completion) => new Date(completion.date).toISOString().split('T')[0] === today);
 
   return (
     <div className="glass-card p-4 group w-full">
@@ -345,7 +438,7 @@ function HabitCard({ habit, habits, onComplete, onEdit, onDelete, onTimer, onCha
           <button onClick={() => onEdit(habit)} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-sm" title="Edit" style={{ color: 'var(--text-secondary)' }}>✏️</button>
           <button onClick={() => onDelete(habit)} className="p-1.5 rounded-lg hover:bg-red-500/10 hover:text-red-500 transition-colors text-sm" title="Delete" style={{ color: 'var(--text-secondary)' }}>🗑️</button>
           <button
-            onClick={() => !isCompletedToday && onComplete(habit._id)}
+            onClick={() => !isCompletedToday && onComplete(habit)}
             disabled={isCompletedToday}
             className={`ml-1 px-4 py-1.5 rounded-lg transition-all font-medium text-sm ${
               isCompletedToday

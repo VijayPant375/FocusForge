@@ -1,265 +1,370 @@
-# FocusForge V2 Feature Plan
+# FocusForge Implementation Plan
 
-## PHASE 1: UI/UX REVOLUTION (Visual Impact)
-### 1.1 Modern Glass Morphism Design System
-- Replace solid dark cards with glass-morphism effect (backdrop blur, semi-transparent backgrounds)
-- Add subtle gradient overlays on cards (purple/blue/pink gradients)
-- Implement smooth shadow elevation system (floating cards effect)
-- Add border glow effects on hover states
-- Create micro-animations for card appearances (fade-in-up, scale effects)
+For use with Codex / Antigrav AI agents
 
-### 1.2 Advanced Data Visualization
-- **Habit Heatmap Calendar (GitHub-style contribution graph)**
-  - Show last 90 days of habit completions
-  - Color intensity based on completion count
-  - Hover tooltips showing exact completion data
-  - Click on date to see which habits were completed
-- **Circular Progress Rings for each habit**
-  - Animated SVG circles showing completion percentage
-  - Different colors per category
-  - Smooth animation on page load
-- **Radial Category Distribution Chart**
-  - Show habit distribution across categories (health, fitness, etc.)
-  - Interactive pie/donut chart
-  - Click to filter habits by category
-- **Streak Flame Visualization**
-  - Animated flame icon that grows with streak length
-  - Color changes: blue (cold) → orange → red (hot) based on streak
-  - Particle effects for streaks over 30 days
+Goal: real LLM integration + live Render deployment = resume-ready project
 
-### 1.3 Animated Stats Dashboard
-- Counter Animations - Numbers count up on page load
-- Progress Bars with Gradients - Smooth animated fills
-- Confetti Effect when all habits completed for the day
-- Trophy/Badge System - Unlock visual achievements
-  - 7-day warrior, 30-day champion, 100-day legend
-  - Animated badge reveal modals
+## Context & Repo Structure
 
-### 1.4 Dark/Light Mode Toggle
-- Smooth theme transition animation
-- System preference detection
-- Persistent theme choice in localStorage
-- Update all components to support both themes
-- Add sun/moon toggle switch with animation
+Before starting any phase, familiarize yourself with the codebase. FocusForge is a true microservices app: 5 independent services plus an API gateway. Each service is its own Node.js/Express app with its own `package.json`. Do not mix code across services.
 
-### 1.5 Skeleton Loading States
-- Replace "Loading..." text with skeleton screens
-- Animated shimmer effect on skeleton cards
-- Smooth transition from skeleton to actual content
+Expected folder structure:
 
-## PHASE 2: UNIQUE KILLER FEATURES (Functionality Impact)
-### 2.1 Habit Chains & Dependencies
-- Habit Stacking - Link habits in sequential chains
-  - "After I complete Morning Workout → Do Meditation"
-  - Visual chain links in UI
-  - Auto-suggestion when previous habit is completed
+```text
+focusforge/
+  api-gateway/          <- Entry point, routes to other services
+  habit-service/        <- CRUD for habits
+  analytics-service/    <- Streaks, completion stats
+  notification-service/ <- Reminders (not touched in this plan)
+  ai-service/           <- Currently rule-based - this is what we replace
+  frontend/             <- React 18 + Vite
+```
 
-### 2.2 Focus Timer Integration (Pomodoro)
-- Built-in Pomodoro timer for each habit
-- Visual circular countdown timer
-- Sound notifications (customizable tones)
-- Session history tracking
-- Timer presets (25/15/5 minutes)
-- Break reminders
+The `ai-service` currently has a rule engine that produces insights based on `if/else` logic. The README acknowledges this. Replacing it with real Gemini API calls is the core goal of Phase 1.
 
-### 2.3 Habit Templates Library
-- Pre-built habit templates by category:
-  - Fitness Bundle: Morning run, Stretching, 10k steps
-  - Learning Bundle: Read 30 mins, Duolingo, Watch tutorial
-  - Health Bundle: Drink water, Vitamins, Sleep 8 hours
-- One-click import entire bundles
-- Community-shared templates (future: public template marketplace)
+## Phase 1 - Gemini AI Integration (`ai-service`)
 
-### 2.4 Smart Reminders & Scheduling
-- Browser push notifications (ask for permission)
-- Custom reminder times per habit
-- "Best time to do X" AI suggestions based on completion history
-- Snooze functionality
-- Repeat patterns (every Mon/Wed/Fri, etc.)
+Estimated time: 3-4 hours
 
-### 2.5 Mood & Energy Tracker
-- Quick mood check-in when completing habits
-- Emoji-based mood selector (😄 😐 😔 😴 😤)
-- Energy level slider (1-10)
-- Correlate mood/energy with habit completion patterns
-- "You're most productive at 8 AM" insights
-- Weekly mood trend chart
+Test before moving to Phase 2.
 
-### 2.6 Social Accountability Features
-- **Share Progress - Generate shareable achievement cards**
-  - Beautiful Instagram-story-style graphics
-  - "30-day streak achieved!" with stats
-  - Download as PNG or share link
-- **Accountability Partners**
-  - Invite friends via email
-  - See friend's streak counts (privacy-controlled)
-  - Send encouragement messages
-  - Weekly leaderboard (optional)
+### 1.1 - Setup
 
-### 2.7 Gamification System
-- **XP Points System**
-  - Earn XP for completing habits
-  - Bonus XP for streaks, perfect days
-  - Level up system (Level 1-50)
-- **Achievement Badges (20+ unique badges)**
-  - Early Bird (5 habits before 8 AM)
-  - Consistency King (21-day streak)
-  - Category Master (10 habits in one category)
-  - Weekend Warrior (complete all on Sat/Sun)
-- **Daily Challenges**
-  - "Complete 5 habits today for 2x XP"
-  - Rotating weekly challenges
-  - Challenge completion rewards
+- Install the Google Generative AI SDK inside `ai-service` only:
 
-### 2.8 Voice Commands (Experimental)
-- "Mark Morning Workout as complete"
-- "Add new habit: Drink water"
-- "Show my weekly stats"
-- Voice recognition using Web Speech API
-- Floating microphone button
+```bash
+cd ai-service && npm install @google/generative-ai
+```
 
-## PHASE 3: ADVANCED AI FEATURES (Intelligence Impact)
-### 3.1 Predictive Habit Suggestions
-- Analyze user's existing habits and suggest complementary ones
-- "People who do Yoga also do Meditation"
-- Time-based suggestions: "You have 30 mins free at 6 PM, try adding Reading"
-- Category balance suggestions: "Add more mindfulness habits"
+- Add `GEMINI_API_KEY` to `ai-service/.env` and do not hardcode it anywhere:
 
-### 3.2 Failure Pattern Detection
-- AI identifies why streaks break
-- "You skip gym on Mondays - consider lighter workouts"
-- "You forget habits after 8 PM - enable evening reminders"
-- Visual pattern graphs
+```env
+GEMINI_API_KEY=your_key_here
+```
 
-### 3.3 Personalized Coaching Messages
-- Dynamic AI coach personality
-- Motivational quotes based on mood
-- Tough love mode vs. Supportive mode (user choice)
-- Context-aware messages:
-  - Struggling: "Small progress is still progress 💪"
-  - Crushing it: "You're unstoppable! 🔥"
-  - Missed day: "One miss doesn't break you. Start again!"
+- Load it at the top of the service entry file using `process.env.GEMINI_API_KEY`.
 
-### 3.4 Habit Difficulty Auto-Adjustment
-- AI detects if habit is too easy/hard
-- Suggests increasing/decreasing difficulty
-- "You've completed Drink Water 30 days straight - try 10 glasses instead of 8?"
-- Progressive overload suggestions
+Note: Never commit the `.env` file. Add it to `.gitignore` if not already there.
 
-### 3.5 Weekly AI Report Generation
-- PDF/Email report every Sunday
-- Key insights, patterns, achievements
-- Personalized next-week strategy
-- Beautiful data visualizations in report
+### 1.2 - Replace the rule engine
 
-## PHASE 4: MOBILE-FIRST ENHANCEMENTS (Accessibility Impact)
-### 4.1 PWA (Progressive Web App) Setup
-- Install as mobile app
-- Offline functionality
-- Add to home screen prompt
-- App icon and splash screen
-- Works without internet (sync later)
+The current `ai-service` has a function, likely called something like `generateInsights` or `analyzeHabits`, that uses `if/else` rules to return strings. Replace its body with a Gemini API call.
 
-### 4.2 Gesture Controls
-- Swipe right on habit card to complete
-- Swipe left to delete
-- Pull-to-refresh dashboard
-- Long-press for quick actions menu
+The function receives habit data. Use it to build a prompt. Example prompt structure:
 
-### 4.3 Bottom Navigation Bar (Mobile)
-- Dashboard, Habits, Analytics, Profile tabs
-- Smooth tab transitions
-- Active tab indicators
-- Haptic feedback on tap (mobile devices)
+```text
+You are a habit coach. Analyse this user's habit data and give 2-3 short,
+specific insights. Be direct. No generic advice.
 
-### 4.4 Quick Add Floating Action Button
-- Persistent FAB (Floating Action Button)
-- Speed dial menu: Add Habit, Start Timer, Quick Log
-- Smooth expand/collapse animation
+Habit data (last 30 days):
+${JSON.stringify(habitData, null, 2)}
 
-## PHASE 5: DATA & EXPORT FEATURES (Professional Impact)
-### 5.1 Advanced Export Options
-- Export all data as JSON
-- Export analytics as CSV (Excel-ready)
-- Export habit history as PDF report
-- Beautiful print-friendly view
+Return plain text. No markdown. Max 3 sentences per insight.
+```
 
-### 5.2 Import from Other Apps
-- Import from Google Calendar
-- Import from Notion habit tracker
-- Import from CSV template
+Use the `gemini-1.5-flash` model because it is fast and free-tier friendly. Basic call structure:
 
-### 5.3 Backup & Restore
-- One-click backup to file
-- Automatic cloud backup (optional)
-- Restore from backup file
-- Data encryption for privacy
+```js
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+const result = await model.generateContent(prompt);
+const text = result.response.text();
+```
 
-### 5.4 API Webhooks (Advanced)
-- Zapier integration
-- IFTTT integration
-- "When I complete Morning Run, log to Google Sheets"
-- Custom webhook URL support
+Note: Keep the same function signature and return shape as before so the rest of the app does not break. Only the internals change.
 
-## PHASE 6: PERFORMANCE & POLISH (Technical Impact)
-### 6.1 Performance Optimization
-- Lazy load components
-- Image optimization (WebP format)
-- Code splitting for faster initial load
-- Virtual scrolling for large habit lists
-- Debounced search/filter inputs
+### 1.3 - Failure pattern detection endpoint
 
-### 6.2 Accessibility (a11y) Improvements
-- Full keyboard navigation
-- Screen reader support (ARIA labels)
-- High contrast mode
-- Focus indicators
-- Skip to content link
+Add a new endpoint to `ai-service`:
 
-### 6.3 Error Boundaries & Recovery
-- Graceful error handling
-- User-friendly error pages
-- Auto-retry failed API calls
-- Offline queue for actions
+```text
+POST /api/ai/failure-patterns
+```
 
-### 6.4 Onboarding Flow
-- Beautiful welcome screen
-- Interactive tutorial (first-time users)
-- Sample habits pre-loaded for demo
-- Animated feature showcase
-- Skip option for returning users
+This endpoint receives habit history and asks Gemini to identify skip patterns. Example prompt:
 
-### 6.5 Easter Eggs & Delight
-- Konami code for special theme
-- Random motivational quotes on 404 page
-- Celebration animations at milestones
-- Hidden achievement for finding easter eggs
+```text
+Analyse this habit completion history and identify patterns in missed days.
+Be specific - name days of week, times, or sequences where skips cluster.
+Return 2-3 bullet points in plain text.
 
-## PHASE 7: DEPLOYMENT & MARKETING (Visibility Impact)
-### 7.1 Professional Landing Page
-- Separate landing page (before login)
-- Feature showcase with animations
-- Video demo/GIF demonstrations
-- Testimonials section (can be placeholder)
-- Pricing tiers (free tier highlighted)
-- CTA buttons with hover effects
+Data: ${JSON.stringify(completionHistory)}
+```
 
-### 7.2 Demo Mode
-- "Try Demo" button on landing page
-- Pre-populated demo account
-- All features unlocked
-- Reset demo data button
-- Watermark indicating demo mode
+The endpoint should accept:
 
-### 7.3 Screenshot & Video Creation
-- Create professional screenshots
-- Record feature demo videos
-- Create product GIFs for README
-- Design OG image for social sharing
+```json
+{ "habitId": "...", "habitName": "...", "completionHistory": [{ "date": "...", "completed": true }] }
+```
 
-### 7.4 SEO & Meta Tags
-- Proper meta descriptions
-- Open Graph tags
-- Twitter Card tags
-- Sitemap generation
-- Robots.txt
+### 1.4 - Coaching messages endpoint
+
+Add a new endpoint:
+
+```text
+POST /api/ai/coaching-message
+```
+
+This endpoint is called when a user completes or misses a habit. It returns a short motivational message.
+
+Request body:
+
+```json
+{ "habitName": "...", "status": "...", "streak": 0, "mode": "supportive" }
+```
+
+`mode` is either `"supportive"` or `"tough"`.
+
+Prompt template:
+
+```text
+You are a habit coach in ${mode} mode.
+The user just ${status} their habit: '${habitName}'.
+Current streak: ${streak} days.
+Give ONE short coaching message (max 20 words). No hashtags. No emojis.
+```
+
+Note: Wrap all Gemini calls in `try/catch`. On error, return a fallback string so the frontend never breaks.
+
+### 1.5 - Wire frontend to new endpoints
+
+In the frontend, find where AI insights are currently displayed. Update the API calls to hit the new endpoints.
+
+Three places to update:
+
+- Main dashboard insights section: call the existing insights endpoint and verify it works with real data.
+- Habit completion event: call `POST /api/ai/coaching-message` and show the response as a toast or inline message.
+- Analytics page: add a section that calls `POST /api/ai/failure-patterns` and renders the result.
+
+Note: All requests go through the `api-gateway`, not directly to `ai-service`. Check the gateway routing config before updating frontend URLs.
+
+### Phase 1 Verification Checklist
+
+| Check | Expected result |
+| --- | --- |
+| `GEMINI_API_KEY` set in `ai-service/.env` | Service starts without error |
+| `POST /api/ai/insights` with sample habit data | Returns real Gemini-generated text, not rule-based strings |
+| `POST /api/ai/failure-patterns` with history array | Returns pattern analysis mentioning specific days or patterns |
+| `POST /api/ai/coaching-message` with `status=completed` | Returns short motivational sentence |
+| `POST /api/ai/coaching-message` with `status=missed` | Returns a different, appropriate message |
+| Gemini key missing or API down | Endpoints return fallback string and do not crash |
+| Frontend dashboard loads | AI insights section shows real text |
+| Complete a habit in frontend | Coaching message appears as toast or inline |
+
+## Phase 2 - Render Deployment
+
+Estimated time: 2 hours
+
+Do this immediately after Phase 1 is verified locally.
+
+### 2.1 - Pre-deployment checks
+
+- Confirm each service has a start script in `package.json`, for example `"start": "node index.js"`.
+- Confirm each service reads its port from `process.env.PORT` with a fallback.
+- Confirm inter-service URLs are read from environment variables, not hardcoded.
+- Confirm `GEMINI_API_KEY` is only in `.env`, not committed to git.
+
+Note: Render injects `PORT` automatically. Services must not hardcode port numbers.
+
+### 2.2 - Deploy each service on Render
+
+Deploy as individual Web Services on Render. Repeat this for each of the 5 services plus the frontend:
+
+- Create a new Web Service on `render.com`.
+- Connect your GitHub repo (`VijayPant375/focusforge` or equivalent).
+- Set Root Directory to the service folder, for example `ai-service`.
+- Set Build Command to `npm install`.
+- Set Start Command to `npm start`.
+- Add environment variables for that service in the Render dashboard.
+
+Environment variables to set per service:
+
+| Service | Required env vars |
+| --- | --- |
+| `api-gateway` | `HABIT_SERVICE_URL`, `ANALYTICS_SERVICE_URL`, `AI_SERVICE_URL`, `NOTIFICATION_SERVICE_URL`, `PORT` |
+| `ai-service` | `GEMINI_API_KEY`, `PORT` |
+| `habit-service` | `MONGODB_URI`, `PORT` |
+| `analytics-service` | `MONGODB_URI`, `PORT` |
+| `notification-service` | `PORT` plus any reminder config it uses |
+| `frontend` | `VITE_API_BASE_URL` set to the `api-gateway` Render URL |
+
+Note: Deploy `api-gateway` last, after all other services are live, so you have their URLs ready.
+
+### 2.3 - Frontend deployment
+
+The frontend is a Vite app. On Render, deploy it as a Static Site, not a Web Service:
+
+- Build Command: `npm run build`
+- Publish Directory: `dist`
+- Set `VITE_API_BASE_URL` to your `api-gateway` Render URL before building
+
+Note: Vite bakes env vars into the build. If you change `VITE_API_BASE_URL` after building, you must redeploy.
+
+### Phase 2 Verification Checklist
+
+| Check | Expected result |
+| --- | --- |
+| All 5 services plus frontend deployed on Render | Each shows "Live" status in the Render dashboard |
+| Open the frontend Render URL in a browser | App loads with no console errors about missing API |
+| Login and signup flow | Works end to end on the live URL |
+| AI insights visible on dashboard | Real Gemini text, not placeholder or rule-based text |
+| Complete a habit on the live URL | Coaching message appears |
+| Failure patterns on analytics page | Renders correctly with live data |
+
+## Phase 3 - Landing Page + Demo Mode
+
+Estimated time: 3 hours
+
+Only start after Phase 2 is verified.
+
+### 3.1 - Landing page (separate route)
+
+Create a landing page at the `/` route. Move the current login or dashboard entry to `/app`. The landing page is a marketing page and does not require auth.
+
+Required sections on the landing page:
+
+- Hero: app name, one-line description, and two CTAs, "Try Demo" and "Sign Up"
+- Architecture callout: mention "5 microservices + API gateway" explicitly because this is the resume signal
+- Features section: 3-4 feature highlights with icons, including AI-powered insights prominently
+- Tech stack badges: Node.js, React, MongoDB, Docker, Gemini AI
+- Footer: GitHub link and live URL
+
+Note: Keep it simple. One page, no animations needed. Clean layout is enough.
+
+### 3.2 - Demo mode
+
+The demo account allows anyone to try the app without signing up. It must have pre-seeded habit history so AI insights generate immediately.
+
+Backend: create a seed script at `scripts/seedDemo.js` that:
+
+- Creates a user with email `demo@focusforge.app` and a fixed password
+- Creates 5 habits, for example Morning Run, Read 30 mins, Drink Water, Meditate, Stretch
+- Generates 30 days of completion history with realistic patterns, for example skipped Morning Run on Mondays and occasional missed weekends
+- Inserts this data into MongoDB and runs once against the Atlas production DB
+
+Frontend: the "Try Demo" button on the landing page should:
+
+- Call `POST /api/auth/login` with `{ email: 'demo@focusforge.app', password: 'demo1234' }`
+- Store the returned JWT and redirect to `/app/dashboard`
+- Show a dismissable banner at the top: "You are in demo mode. Data resets daily."
+
+Note: Add a daily cron job or Render scheduled job that re-runs the seed script to reset demo data. If cron setup is complex, skip the reset for now. Static demo data is fine for a resume project.
+
+### Phase 3 Verification Checklist
+
+| Check | Expected result |
+| --- | --- |
+| Visit live URL, not `/app` | Landing page loads, not the dashboard |
+| "Try Demo" button | Logs in automatically and redirects to dashboard |
+| Demo dashboard | Shows 5 habits and 30 days of history |
+| AI insights on demo account | Gemini generates real insights based on seed data |
+| Failure patterns on demo account | Shows a "you skip Morning Run on Mondays" style insight |
+| "Sign Up" CTA | Redirects to signup form |
+| GitHub link in footer | Goes to the correct repo |
+
+## Phase 4 - PWA + Pomodoro Timer
+
+Estimated time: 3 hours
+
+Can be done in parallel with Phase 3.
+
+### 4.1 - PWA setup
+
+Use the `vite-plugin-pwa` package. It handles manifest and service worker generation automatically.
+
+- Install inside `frontend/`:
+
+```bash
+npm install -D vite-plugin-pwa
+```
+
+- Add to `vite.config.ts`:
+
+```ts
+import { VitePWA } from 'vite-plugin-pwa'
+
+plugins: [
+  react(),
+  VitePWA({
+    registerType: 'autoUpdate',
+    manifest: {
+      name: 'FocusForge',
+      short_name: 'FocusForge',
+      theme_color: '#ffffff',
+      icons: [
+        { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+        { src: '/icon-512.png', sizes: '512x512', type: 'image/png' }
+      ]
+    }
+  })
+]
+```
+
+- Add `icon-192.png` and `icon-512.png` to `frontend/public/`.
+
+Note: You can generate icons at any favicon generator site. The app just needs to be installable. Icon quality does not matter for the resume.
+
+### 4.2 - Pomodoro timer
+
+Add a timer component that lives on the habit detail page or dashboard. This is pure frontend, with no backend changes.
+
+Requirements:
+
+- Circular countdown timer using an SVG circle with `stroke-dashoffset` animation
+- Three presets: 25 min (focus), 5 min (short break), 15 min (long break)
+- Start, Pause, and Reset controls
+- Browser notification via the Notifications API when the timer completes
+
+Notification code:
+
+```js
+if (Notification.permission === 'default') {
+  await Notification.requestPermission();
+}
+
+new Notification('FocusForge', { body: 'Session complete!' });
+```
+
+Note: The timer state should live in React state with `useState` and `useEffect` plus `setInterval`. Do not use any external timer library.
+
+### Phase 4 Verification Checklist
+
+| Check | Expected result |
+| --- | --- |
+| Open app in Chrome on desktop | Install prompt appears in the address bar |
+| Install the app | Opens as a standalone window with no browser chrome |
+| Pomodoro timer on habit page | Renders correctly and shows circular countdown |
+| Start timer and wait for completion | Browser notification fires |
+| Preset buttons `25/5/15` | Timer resets to the correct duration |
+| Pause and resume | Timer continues from where it paused |
+
+## Phase 5 - README Update
+
+Estimated time: 30 minutes
+
+Do this last.
+
+Update the README to reflect what the project now actually is. Key things to update:
+
+- Remove any mention of rule-based AI and replace it with "powered by Google Gemini 1.5 Flash"
+- Add the live demo link, the Render frontend URL, prominently near the top
+- Add a Demo credentials section with `demo@focusforge.app` / `demo1234`
+- Update the tech stack section to include Gemini AI and PWA
+- Update the architecture section to mention 5 microservices, an API gateway, and independent deployments on Render
+
+Note: The README is often the first thing a recruiter or interviewer reads. The live URL and demo credentials should be visible without scrolling.
+
+## Summary
+
+| Phase | What it delivers | Time | Priority |
+| --- | --- | --- | --- |
+| 1 - Gemini integration | Real AI replacing rule engine | 3-4 hrs | Must do |
+| 2 - Render deployment | Live URL on the internet | 2 hrs | Must do |
+| 3 - Landing page + demo | Recruiter-friendly first impression | 3 hrs | High |
+| 4 - PWA + Pomodoro | Installable app, extra resume line | 3 hrs | Medium |
+| 5 - README update | Accurate docs, visible live link | 30 min | Do last |
+
+Total estimated effort: about 12 hours across 2 days.
+
+The project is resume-ready after Phase 1 plus Phase 2. Everything after that is polish.
