@@ -1,0 +1,93 @@
+services:
+  # ─── 1. User Service ────────────────────────────────────────────────────────
+  - type: web
+    name: focusforge-user-service
+    runtime: node
+    rootDir: user-service
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false   # Set manually in Render dashboard
+      - key: JWT_SECRET
+        sync: false   # Set manually in Render dashboard
+
+  # ─── 2. Habit Service ───────────────────────────────────────────────────────
+  - type: web
+    name: focusforge-habit-service
+    runtime: node
+    rootDir: habit-service
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+
+  # ─── 3. Analytics Service ───────────────────────────────────────────────────
+  - type: web
+    name: focusforge-analytics-service
+    runtime: node
+    rootDir: analytics-service
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+
+  # ─── 4. AI Service ──────────────────────────────────────────────────────────
+  - type: web
+    name: focusforge-ai-service
+    runtime: node
+    rootDir: ai-service
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false   # Set manually in Render dashboard - never commit this
+
+  # ─── 5. API Gateway (deploy LAST — needs all service URLs above) ─────────────
+  - type: web
+    name: focusforge-api-gateway
+    runtime: node
+    rootDir: api-gateway
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: USER_SERVICE_URL
+        sync: false   # Paste the focusforge-user-service Render URL
+      - key: HABIT_SERVICE_URL
+        sync: false   # Paste the focusforge-habit-service Render URL
+      - key: ANALYTICS_SERVICE_URL
+        sync: false   # Paste the focusforge-analytics-service Render URL
+      - key: AI_SERVICE_URL
+        sync: false   # Paste the focusforge-ai-service Render URL
+
+  # ─── 6. Frontend (Static Site — deploy LAST after gateway is live) ───────────
+  - type: web
+    name: focusforge-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false   # Paste the focusforge-api-gateway Render URL + /api
+                      # e.g. https://focusforge-api-gateway.onrender.com/api
