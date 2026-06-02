@@ -10,7 +10,15 @@ export function ThemeProvider({ children }) {
   });
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+      // Keep data-theme for legacy CSS variables
+      root.setAttribute('data-theme', 'dark');
+    } else {
+      root.classList.remove('dark');
+      root.setAttribute('data-theme', 'light');
+    }
     localStorage.setItem('theme', theme);
   }, [theme]);
 

@@ -18,7 +18,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-900 text-white">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
       <Toaster position="top-right" />
       <div className="flex-1">
         <Router>
@@ -37,11 +37,11 @@ function App() {
           </Routes>
         </Router>
       </div>
-      
+
       {/* Universal Footer */}
-      <footer className="w-full bg-slate-950 border-t border-slate-800 py-4 mt-auto">
-        <div className="container mx-auto px-4 text-center text-slate-400 text-sm font-medium">
-          Built with <span className="text-purple-500">⚡</span> by <span className="text-slate-200">Vijay Pant</span> | FocusForge © {new Date().getFullYear()}
+      <footer className="w-full bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-4 mt-auto transition-colors duration-300">
+        <div className="container mx-auto px-4 text-center text-gray-500 dark:text-gray-400 text-sm font-medium">
+          Built with <span className="text-brand-purple">⚡</span> by <span className="text-gray-900 dark:text-gray-100 font-semibold">Vijay Pant</span> | FocusForge © {new Date().getFullYear()}
         </div>
       </footer>
     </div>

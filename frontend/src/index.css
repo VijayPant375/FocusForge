@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
   --bg-primary: #f8fafc;
@@ -34,7 +34,8 @@
   --tooltip-border: #312e81;
 }
 
-[data-theme='dark'] {
+[data-theme='dark'],
+.dark {
   --bg-primary: #050b14;
   --bg-secondary: #0f172a;
   --text-primary: #f8fafc;
