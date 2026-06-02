@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { habitAPI, analyticsAPI, aiAPI } from '../api';
 import AddHabitModal from '../components/AddHabitModal';
@@ -20,7 +20,9 @@ import PomodoroTimer from '../components/PomodoroTimer';
 import MoodCheckInModal from '../components/MoodCheckInModal';
 import TemplatesModal from '../components/TemplatesModal';
 import HabitChainModal from '../components/HabitChainModal';
-import { BadgesPanel, XPBar } from '../components/GamificationUI';
+import { BadgesPanel, XPBar } from '../components/GamificationUI'; // XPBar moved to dashboard body in Phase 3
+import { useGamification } from '../hooks/useGamification';
+
 import { VoiceMicButton } from '../components/VoiceCommands';
 import ShareCardModal from '../components/ShareCardModal';
 
@@ -206,25 +208,12 @@ function Dashboard({ setAuth }) {
     <div className="min-h-screen relative">
       <div className="mesh-bg"></div>
 
-      <nav className="glass-panel sticky top-0 z-40 mb-6 mx-4 mt-3 px-5 py-3 flex items-center gap-3 animate-fade-in-up">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <h1 className="text-xl font-bold flex-shrink-0" style={{ color: 'var(--text-primary)' }}>FocusForge</h1>
-          <div className="flex-1 min-w-0 hidden lg:block">
-            <XPBar habits={habits} />
-          </div>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-sm hidden sm:inline" style={{ color: 'var(--text-secondary)' }}>
-            Hi, <span className="font-semibold" style={{ color: 'var(--accent-1)' }}>{user.name}</span>
-          </span>
-          <button onClick={() => setShowBadges(true)} className="p-2 hover:bg-white/10 rounded-lg transition-colors text-lg" title="Achievements">🏆</button>
-          <button onClick={() => setShowShare(true)} className="p-2 hover:bg-white/10 rounded-lg transition-colors text-lg" title="Share">📤</button>
-          <ThemeToggle />
-          <button onClick={handleLogout} className="px-3 py-1.5 rounded-lg border text-xs font-medium border-[var(--glass-border)] hover:bg-red-500/10 text-red-500 transition-colors">
-            Logout
-          </button>
-        </div>
-      </nav>
+      <Navbar
+        user={user}
+        onLogout={handleLogout}
+        onShowBadges={() => setShowBadges(true)}
+        onShowShare={() => setShowShare(true)}
+      />
 
       {chainSuggestion && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-30 animate-fade-in-up">
@@ -244,43 +233,59 @@ function Dashboard({ setAuth }) {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 pb-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <StatCard title="Total Habits" value={stats?.totalHabits || 0} icon="🎯" />
-          <StatCard title="Completed Today" value={stats?.completedToday || 0} icon="✅" />
-          <StatCard title="Avg Streak" value={stats?.avgStreak || 0} icon="🔥" />
-          <StatCard title="Completion Rate" value={stats?.completionRate || 0} icon="📊" />
+      <div className="max-w-7xl mx-auto px-4 pb-8 pt-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+
+        {/* 3.1 — Stat Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+          <StatCard title="Total Habits" value={stats?.totalHabits || 0} icon="🎯" color="purple" />
+          <StatCard title="Completed Today" value={stats?.completedToday || 0} icon="✅" color="green" />
+          <StatCard title="Avg Streak" value={stats?.avgStreak || 0} icon="🔥" color="orange" />
+          <StatCard title="Completion Rate" value={stats?.completionRate || 0} icon="📊" color="blue" />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 3.2 — XP / Level hero card */}
+        <XPHeroCard habits={habits} />
+
+        {/* 3.3 + 3.4 — Main grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+
+          {/* Left — Habits list */}
           <div className="lg:col-span-2">
-            <div className="glass-panel p-5">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
               <div className="flex flex-wrap justify-between items-center mb-5 gap-2">
-                <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Your Habits</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Your Habits</h2>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowTemplates(true)}
-                    className="px-3 py-1.5 rounded-lg border border-[var(--glass-border)] hover:bg-white/10 transition-colors text-sm flex items-center gap-1"
-                    style={{ color: 'var(--text-secondary)' }}
+                    className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1"
                   >
                     📋 Templates
                   </button>
-                  <button onClick={() => setShowAddModal(true)} className="glass-button px-4 py-1.5 rounded-lg text-sm flex items-center gap-1">
+                  <button
+                    onClick={() => setShowAddModal(true)}
+                    className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-brand-purple to-brand-pink text-white text-sm font-semibold hover:opacity-90 active:scale-95 transition-all"
+                  >
                     + Add Habit
                   </button>
                 </div>
               </div>
 
               {habits.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-4xl mb-3">🌱</p>
-                  <p className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>No habits yet</p>
-                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Create your first habit or import a template bundle</p>
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="text-6xl mb-4 animate-bounce">🌱</div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Your journey starts here</h3>
+                  <p className="text-gray-400 dark:text-gray-500 max-w-xs mb-6">Add your first habit and start building the life you want, one day at a time.</p>
+                  <button
+                    onClick={() => setShowAddModal(true)}
+                    className="px-6 py-3 rounded-xl bg-gradient-to-r from-brand-purple to-brand-pink text-white font-semibold hover:opacity-90 active:scale-95 transition-all"
+                  >
+                    + Add your first habit
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {habits.map((habit, index) => (
-                    <div key={habit._id} className="animate-fade-in-up" style={{ animationDelay: `${0.08 * index}s` }}>
+                    <div key={habit._id} className="animate-fade-in-up" style={{ animationDelay: `${0.06 * index}s` }}>
                       <HabitCard
                         habit={habit}
                         habits={habits}
@@ -296,60 +301,74 @@ function Dashboard({ setAuth }) {
               )}
 
               {habits.length > 0 && (
-                <div className="mt-6 border-t pt-5" style={{ borderColor: 'var(--glass-border)' }}>
-                  <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Consistency Heatmap</h3>
+                <div className="mt-6 border-t border-gray-100 dark:border-gray-800 pt-5">
+                  <h3 className="text-sm font-semibold mb-3 text-gray-900 dark:text-white">Consistency Heatmap</h3>
                   <HabitHeatmap habits={habits} />
                 </div>
               )}
             </div>
           </div>
 
+          {/* Right sidebar */}
           <div className="space-y-5">
-            <div className="glass-panel p-5 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-              <h3 className="text-base font-bold mb-3" style={{ color: 'var(--text-primary)' }}>Weekly Overview</h3>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
+              <h3 className="text-base font-bold mb-3 text-gray-900 dark:text-white">Weekly Overview</h3>
               <WeeklyChart />
             </div>
 
-            <div className="glass-panel p-5 animate-fade-in-up" style={{ animationDelay: '0.25s' }}>
-              <h3 className="text-base font-bold mb-3" style={{ color: 'var(--text-primary)' }}>Category Spread</h3>
-              <RadialChart habits={habits} />
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
+              <h3 className="text-base font-bold mb-3 text-gray-900 dark:text-white">Category Spread</h3>
+              {habits.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <span className="text-4xl mb-2">📊</span>
+                  <p className="text-sm text-gray-400 dark:text-gray-500">Add habits to see your category breakdown</p>
+                </div>
+              ) : (
+                <RadialChart habits={habits} />
+              )}
             </div>
 
-            <div className="glass-panel p-5 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-              <h3 className="text-base font-bold mb-3" style={{ color: 'var(--text-primary)' }}>AI Insights</h3>
-              <div className="space-y-2">
-                {insights.map((insight, index) => (
-                  <div key={index} className="glass-card p-3 flex items-start gap-3">
-                    <p className="text-xl flex-shrink-0">{insight.icon}</p>
-                    <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{insight.message}</p>
-                  </div>
-                ))}
-              </div>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
+              <h3 className="text-base font-bold mb-3 text-gray-900 dark:text-white">AI Insights</h3>
+              {insights.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-6 text-center">
+                  <span className="text-3xl mb-2">🤖</span>
+                  <p className="text-sm text-gray-400 dark:text-gray-500">Complete habits to unlock AI insights</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {insights.map((insight, index) => (
+                    <div key={index} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 flex items-start gap-3">
+                      <p className="text-xl flex-shrink-0">{insight.icon}</p>
+                      <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-400">{insight.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="glass-panel p-5 animate-fade-in-up" style={{ animationDelay: '0.35s' }}>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div>
-                  <h3 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>Failure Patterns</h3>
-                  <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white">Failure Patterns</h3>
+                  <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">
                     {failurePatternHabit ? `Analyzing ${failurePatternHabit}` : 'Analyzing habit history'}
                   </p>
                 </div>
                 <span className="text-lg">🧠</span>
               </div>
-
               {failurePatternsLoading ? (
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Reading completion history...</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Reading completion history...</p>
               ) : failurePatterns.length > 0 ? (
                 <div className="space-y-2">
                   {failurePatterns.map((pattern, index) => (
-                    <div key={index} className="glass-card p-3">
-                      <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{pattern}</p>
+                    <div key={index} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
+                      <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-400">{pattern}</p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Complete a few habits over time and this section will highlight where misses tend to cluster.
                 </p>
               )}
@@ -377,80 +396,243 @@ function Dashboard({ setAuth }) {
   );
 }
 
-function StatCard({ title, value, icon }) {
+// Color maps for stat cards
+const STAT_COLORS = {
+  purple: {
+    bg: 'bg-purple-50 dark:bg-purple-900/20',
+    text: 'text-brand-purple',
+    border: 'border-l-brand-purple',
+  },
+  green: {
+    bg: 'bg-green-50 dark:bg-green-900/20',
+    text: 'text-brand-green',
+    border: 'border-l-brand-green',
+  },
+  orange: {
+    bg: 'bg-orange-50 dark:bg-orange-900/20',
+    text: 'text-brand-orange',
+    border: 'border-l-brand-orange',
+  },
+  blue: {
+    bg: 'bg-blue-50 dark:bg-blue-900/20',
+    text: 'text-brand-blue',
+    border: 'border-l-brand-blue',
+  },
+};
+
+function StatCard({ title, value, icon, color = 'purple' }) {
   const isCompletionRate = title === 'Completion Rate';
   const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  const colors = STAT_COLORS[color];
 
   return (
-    <div className="glass-card p-5 relative overflow-hidden group">
-      <div className="flex items-center justify-between relative z-10 w-full">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow group">
+      <div className="flex items-center justify-between">
         <div className="flex-1">
-          <p className="text-xs mb-1 font-medium" style={{ color: 'var(--text-secondary)' }}>{title}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{title}</p>
           <div className="mt-1">
             {isCompletionRate ? (
-              <div className="flex justify-center my-1">
-                <CircularProgress percentage={numValue} size={56} strokeWidth={6} />
+              <div className="flex items-center gap-2 mt-2">
+                <CircularProgress percentage={numValue} size={52} strokeWidth={5} />
+                <span className="text-2xl font-bold text-gray-900 dark:text-white">{Math.round(numValue)}%</span>
               </div>
             ) : (
-              <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+              <p className="text-3xl font-bold mt-1 text-gray-900 dark:text-white">
                 <AnimatedCounter value={value} />
               </p>
             )}
           </div>
         </div>
-        {!isCompletionRate && (
-          <div className="text-3xl filter drop-shadow-md group-hover:scale-110 transition-transform duration-300">{icon}</div>
-        )}
+        <div className={`w-12 h-12 rounded-2xl ${colors.bg} flex items-center justify-center text-2xl flex-shrink-0 group-hover:scale-110 transition-transform duration-200`}>
+          {icon}
+        </div>
       </div>
-      <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-[var(--accent-1)] opacity-5 rounded-full blur-2xl group-hover:opacity-20 transition-opacity"></div>
     </div>
   );
 }
 
+// Category → brand color mapping for habit cards
+const CATEGORY_COLORS = {
+  health:      { dot: 'bg-brand-green',  icon: 'bg-green-100 dark:bg-green-900/30' },
+  fitness:     { dot: 'bg-brand-orange', icon: 'bg-orange-100 dark:bg-orange-900/30' },
+  mindfulness: { dot: 'bg-brand-blue',   icon: 'bg-blue-100 dark:bg-blue-900/30' },
+  learning:    { dot: 'bg-brand-yellow', icon: 'bg-yellow-100 dark:bg-yellow-900/30' },
+  productivity:{ dot: 'bg-brand-purple', icon: 'bg-purple-100 dark:bg-purple-900/30' },
+  social:      { dot: 'bg-brand-pink',   icon: 'bg-pink-100 dark:bg-pink-900/30' },
+  default:     { dot: 'bg-gray-400',     icon: 'bg-gray-100 dark:bg-gray-800' },
+};
+
+const CATEGORY_EMOJIS = {
+  health: '❤️', fitness: '💪', mindfulness: '🧘', learning: '📖',
+  productivity: '⚡', social: '🤝', default: '✨',
+};
+
 function HabitCard({ habit, habits, onComplete, onEdit, onDelete, onTimer, onChain }) {
   const today = new Date().toISOString().split('T')[0];
   const completions = Array.isArray(habit.completions) ? habit.completions : [];
-  const isCompletedToday = completions.some((completion) => new Date(completion.date).toISOString().split('T')[0] === today);
+  const isCompletedToday = completions.some((c) => new Date(c.date).toISOString().split('T')[0] === today);
+  const cat = CATEGORY_COLORS[habit.category] || CATEGORY_COLORS.default;
+  const catEmoji = CATEGORY_EMOJIS[habit.category] || CATEGORY_EMOJIS.default;
 
   return (
-    <div className="glass-card p-4 group w-full">
-      <div className="flex items-start justify-between gap-3">
+    <div className={`rounded-2xl p-4 border-2 transition-all cursor-default group ${
+      isCompletedToday
+        ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800'
+        : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 hover:border-brand-purple dark:hover:border-brand-purple'
+    }`}>
+      <div className="flex items-center gap-3">
+        {/* Category color dot */}
+        <div className={`w-2.5 h-2.5 rounded-full ${cat.dot} flex-shrink-0`} />
+        {/* Category icon circle */}
+        <div className={`w-11 h-11 rounded-xl ${cat.icon} flex items-center justify-center text-xl flex-shrink-0`}>
+          {catEmoji}
+        </div>
+        {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h4 className="font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{habit.name}</h4>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h4 className="font-semibold text-gray-900 dark:text-white truncate">{habit.name}</h4>
             {habit.chainedTo && <span className="text-xs px-1.5 py-0.5 rounded-md text-purple-400 bg-purple-500/10 border border-purple-500/20 flex-shrink-0">🔗 Chained</span>}
             {habit.reminder?.enabled && <span className="text-xs px-1.5 py-0.5 rounded-md text-blue-400 bg-blue-500/10 border border-blue-500/20 flex-shrink-0">🔔 {habit.reminder.time}</span>}
           </div>
-          {habit.description && <p className="text-xs mb-2 line-clamp-1" style={{ color: 'var(--text-secondary)' }}>{habit.description}</p>}
-          <div className="flex flex-wrap gap-2">
-            <span className="text-xs font-medium px-2 py-0.5 rounded-md glass-card flex items-center gap-1" style={{ color: 'var(--accent-1)' }}>
-              <StreakFlame streak={habit.currentStreak} />
-              <span>{habit.currentStreak}d streak</span>
-            </span>
-            <span className="text-xs font-medium px-2 py-0.5 rounded-md glass-card capitalize" style={{ color: 'var(--text-secondary)' }}>
-              {habit.category}
-            </span>
-          </div>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+            🔥 {habit.currentStreak}d streak · <span className="capitalize">{habit.frequency || 'Daily'}</span>
+          </p>
         </div>
+        {/* Action buttons */}
         <div className="flex items-center gap-1 flex-shrink-0">
-          <button onClick={onTimer} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-sm" title="Pomodoro Timer" style={{ color: 'var(--text-secondary)' }}>⏱</button>
-          <button onClick={onChain} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-sm" title="Chain & Reminder" style={{ color: 'var(--text-secondary)' }}>⚙️</button>
-          <button onClick={() => onEdit(habit)} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-sm" title="Edit" style={{ color: 'var(--text-secondary)' }}>✏️</button>
-          <button onClick={() => onDelete(habit)} className="p-1.5 rounded-lg hover:bg-red-500/10 hover:text-red-500 transition-colors text-sm" title="Delete" style={{ color: 'var(--text-secondary)' }}>🗑️</button>
+          <button onClick={onTimer} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-400" title="Pomodoro Timer">⏱</button>
+          <button onClick={onChain} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-400" title="Chain & Reminder">⚙️</button>
+          <button onClick={() => onEdit(habit)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-400" title="Edit">✏️</button>
+          <button onClick={() => onDelete(habit)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 transition-colors text-gray-400" title="Delete">🗑️</button>
+          {/* Complete button */}
           <button
             onClick={() => !isCompletedToday && onComplete(habit)}
             disabled={isCompletedToday}
-            className={`ml-1 px-4 py-1.5 rounded-lg transition-all font-medium text-sm ${
+            className={`ml-1 w-10 h-10 rounded-xl border-2 flex items-center justify-center text-lg transition-all ${
               isCompletedToday
-                ? 'bg-green-500/20 text-green-500 cursor-not-allowed border border-green-500/30'
-                : 'glass-button'
+                ? 'border-green-400 bg-green-100 dark:bg-green-900/30 text-green-500 cursor-not-allowed'
+                : 'border-gray-200 dark:border-gray-700 text-gray-300 hover:border-brand-green hover:text-brand-green hover:scale-110'
             }`}
           >
-            {isCompletedToday ? '✓ Done' : 'Complete'}
+            ✓
           </button>
         </div>
       </div>
+      {habit.description && (
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 ml-[3.25rem] line-clamp-1">{habit.description}</p>
+      )}
     </div>
+  );
+}
+
+// XP Hero card — uses same useGamification hook, displayed on dashboard
+function XPHeroCard({ habits }) {
+  const { xp, level, levelProgress, nextLevelXP, currentLevelXP } = useGamification(habits);
+  const title = level >= 30 ? 'Master' : level >= 20 ? 'Expert' : level >= 10 ? 'Veteran' : level >= 5 ? 'Rising Star' : 'Beginner';
+  const xpInLevel = xp - currentLevelXP;
+  const xpNeeded = nextLevelXP - currentLevelXP;
+
+  return (
+    <div className="bg-gradient-to-r from-violet-600 to-pink-500 rounded-2xl p-5 text-white shadow-lg">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm opacity-80">Level {level} · {title}</p>
+          <p className="text-2xl font-bold mt-1">{xp.toLocaleString()} XP</p>
+        </div>
+        <div className="text-4xl">🏆</div>
+      </div>
+      <div className="mt-4 bg-white/20 rounded-full h-3">
+        <div
+          className="bg-white rounded-full h-3 transition-all duration-700"
+          style={{ width: `${levelProgress}%` }}
+        />
+      </div>
+      <p className="text-xs opacity-70 mt-2">
+        {xpInLevel.toLocaleString()} / {xpNeeded.toLocaleString()} XP to Level {level + 1}
+      </p>
+    </div>
+  );
+}
+
+function Navbar({ user, onLogout, onShowBadges, onShowShare }) {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const avatarLetter = (user?.name || 'U')[0].toUpperCase();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <nav className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+
+        {/* Left — Logo */}
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">🔥</span>
+          <span className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
+            FocusForge
+          </span>
+        </div>
+
+        {/* Right — Actions */}
+        <div className="flex items-center gap-1">
+          {/* Badges */}
+          <button
+            onClick={onShowBadges}
+            className="p-2 rounded-xl text-gray-500 dark:text-gray-400 hover:text-brand-purple dark:hover:text-brand-purple hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+            title="Achievements"
+          >
+            🏆
+          </button>
+
+          {/* Share */}
+          <button
+            onClick={onShowShare}
+            className="p-2 rounded-xl text-gray-500 dark:text-gray-400 hover:text-brand-blue dark:hover:text-brand-blue hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+            title="Share progress"
+          >
+            📤
+          </button>
+
+          {/* Theme toggle */}
+          <ThemeToggle />
+
+          {/* Avatar dropdown */}
+          <div className="relative ml-1" ref={dropdownRef}>
+            <button
+              onClick={() => setDropdownOpen(prev => !prev)}
+              className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-purple to-brand-pink text-white font-bold text-sm flex items-center justify-center hover:opacity-90 hover:scale-105 transition-all shadow-sm"
+              title={user?.name || 'Account'}
+            >
+              {avatarLetter}
+            </button>
+
+            {dropdownOpen && (
+              <div className="absolute right-0 mt-2 w-44 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-xl overflow-hidden z-50 animate-fade-in-up">
+                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Signed in as</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user?.name || 'User'}</p>
+                </div>
+                <button
+                  onClick={() => { setDropdownOpen(false); onLogout(); }}
+                  className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left"
+                >
+                  <span>→</span> Logout
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </nav>
   );
 }
 
