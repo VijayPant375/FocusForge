@@ -468,6 +468,7 @@ const CATEGORY_EMOJIS = {
 };
 
 function HabitCard({ habit, habits, onComplete, onEdit, onDelete, onTimer, onChain }) {
+  const [isAnimating, setIsAnimating] = useState(false);
   const today = new Date().toISOString().split('T')[0];
   const completions = Array.isArray(habit.completions) ? habit.completions : [];
   const isCompletedToday = completions.some((c) => new Date(c.date).toISOString().split('T')[0] === today);
@@ -506,12 +507,21 @@ function HabitCard({ habit, habits, onComplete, onEdit, onDelete, onTimer, onCha
           <button onClick={() => onDelete(habit)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 transition-colors text-gray-400" title="Delete">🗑️</button>
           {/* Complete button */}
           <button
-            onClick={() => !isCompletedToday && onComplete(habit)}
+            onClick={() => {
+              if (isCompletedToday || isAnimating) return;
+              setIsAnimating(true);
+              setTimeout(() => {
+                setIsAnimating(false);
+                onComplete(habit);
+              }, 400);
+            }}
             disabled={isCompletedToday}
             className={`ml-1 w-10 h-10 rounded-xl border-2 flex items-center justify-center text-lg transition-all ${
-              isCompletedToday
-                ? 'border-green-400 bg-green-100 dark:bg-green-900/30 text-green-500 cursor-not-allowed'
-                : 'border-gray-200 dark:border-gray-700 text-gray-300 hover:border-brand-green hover:text-brand-green hover:scale-110'
+              isAnimating
+                ? 'scale-125 bg-brand-green text-white border-brand-green shadow-lg shadow-brand-green/50 animate-pulse'
+                : isCompletedToday
+                  ? 'border-green-400 bg-green-100 dark:bg-green-900/30 text-green-500 cursor-not-allowed'
+                  : 'border-gray-200 dark:border-gray-700 text-gray-300 hover:border-brand-green hover:text-brand-green hover:scale-110'
             }`}
           >
             ✓

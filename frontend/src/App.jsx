@@ -19,7 +19,19 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-      <Toaster position="top-right" />
+      <Toaster 
+        position="bottom-right"
+        toastOptions={{
+          duration: 4000,
+          className: 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-100 dark:border-gray-800 shadow-xl rounded-2xl font-medium',
+          success: {
+            iconTheme: { primary: '#10B981', secondary: 'white' },
+          },
+          error: {
+            iconTheme: { primary: '#EF4444', secondary: 'white' },
+          },
+        }}
+      />
       <div className="flex-1">
         <Router>
           <Routes>
