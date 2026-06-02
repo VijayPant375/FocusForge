@@ -179,13 +179,19 @@ Response Back to Frontend
 
 ## Implemented Product Features
 
-### Dashboard Experience
+### Auth & Onboarding
+- Split-screen modern Login and Register pages with dynamic visuals
 - Protected dashboard route after authentication
+
+### Dashboard Experience
 - Sticky navbar with XP bar, user greeting, share action, achievements, theme switch, and logout
 - Responsive two-column layout with habits on the left and analytics/insights on the right
-- Animated loading placeholders for first render
+- Animated skeleton loading placeholders for seamless first render
+- Custom empty states to guide new users
+- Bottom-right toaster notifications for AI insights and alerts
 
-### Habit Cards
+### Habit Cards & Management
+- Enhanced Add Habit Modal with interactive emoji picker and category color selector
 - Per-habit action buttons for complete, edit, delete, Pomodoro, and chain/reminder settings
 - Completion state lock for habits already completed today
 - Streak badge and category badge display
@@ -418,7 +424,8 @@ The repository includes deployment notes for Render in [DEPLOYMENT.md](DEPLOYMEN
 ### Render Strategy
 - Deploy `user-service`, `habit-service`, `analytics-service`, and `ai-service` as separate Node web services
 - Deploy `api-gateway` as its own Node service with upstream service URLs configured as environment variables
-- Deploy the frontend as a static site after pointing it at the live API gateway
+- Deploy the frontend as a static site after pointing it at the live API gateway. *(If deploying the frontend as a Docker container, ensure `ARG VITE_API_URL` is passed during build)*.
+- **Important**: Backend Dockerfiles omit `EXPOSE` instructions to ensure Render's internal router correctly forwards traffic to the default `PORT=10000`.
 - Use MongoDB Atlas for production data persistence
 
 ### Frontend API Configuration
@@ -556,6 +563,10 @@ If the seed process fails:
 If the frontend cannot reach the backend:
 - confirm `VITE_API_URL` is correct
 - confirm the gateway is reachable at `http://localhost:5000/api`
+
+### Render 502 Bad Gateway / Connection Refused
+- If using Docker deployments on Render, ensure backend `Dockerfile`s **do not** have an `EXPOSE` line that conflicts with your `PORT` environment variable.
+- For the frontend, ensure `VITE_API_URL` is added as an `ARG` in the `Dockerfile` so it is bundled into the React app at build time instead of crashing the internal Nginx proxy.
 
 ---
 
