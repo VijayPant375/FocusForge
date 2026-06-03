@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { habitAPI, analyticsAPI, aiAPI } from '../api';
+import { habitAPI, analyticsAPI, aiAPI, notificationAPI } from '../api';
+import { Bell } from 'lucide-react';
 import AddHabitModal from '../components/AddHabitModal';
 import WeeklyChart from '../components/WeeklyChart';
 import EditHabitModal from '../components/EditHabitModal';
@@ -600,7 +601,38 @@ function XPHeroCard({ habits }) {
 function Navbar({ user, onLogout, onShowBadges, onShowShare }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  
+  const [notifications, setNotifications] = useState([]);
+  const [bellOpen, setBellOpen] = useState(false);
+  const [notifsLoading, setNotifsLoading] = useState(false);
+  const bellRef = useRef(null);
+  
   const avatarLetter = (user?.name || 'U')[0].toUpperCase();
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      setNotifsLoading(true);
+      try {
+        const res = await notificationAPI.getPending();
+        setNotifications(res.data);
+      } catch (err) {
+        setNotifications([]);
+      } finally {
+        setNotifsLoading(false);
+      }
+    };
+    fetchNotifications();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (bellRef.current && !bellRef.current.contains(e.target)) {
+        setBellOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -644,6 +676,44 @@ function Navbar({ user, onLogout, onShowBadges, onShowShare }) {
           >
             📤
           </button>
+
+          {/* Bell Notifications */}
+          <div className="relative" ref={bellRef}>
+            <button
+              onClick={() => setBellOpen(prev => !prev)}
+              className="relative p-2 rounded-full hover:bg-white/10 transition text-gray-500 dark:text-gray-400"
+              aria-label="Notifications"
+            >
+              <Bell className="w-5 h-5" />
+              {notifications.length > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+              )}
+            </button>
+
+            {bellOpen && (
+              <div className="absolute right-0 mt-2 w-72 rounded-xl shadow-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 z-50">
+                <div className="p-3 border-b border-gray-200 dark:border-gray-700 font-semibold text-sm text-gray-900 dark:text-white">
+                  Pending Reminders
+                </div>
+                {notifsLoading ? (
+                  <div className="p-4 text-sm text-gray-500">Loading...</div>
+                ) : notifications.length === 0 ? (
+                  <div className="p-4 text-sm text-gray-500">No reminders due right now.</div>
+                ) : (
+                  <ul className="max-h-60 overflow-y-auto">
+                    {notifications.map(habit => (
+                      <li key={habit._id} className="px-4 py-3 text-sm border-b border-gray-100 dark:border-gray-700 last:border-0">
+                        <div className="font-medium text-gray-900 dark:text-white">{habit.name}</div>
+                        <div className="text-xs text-gray-400 mt-0.5">
+                          Reminder: {habit.reminder?.time}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Theme toggle */}
           <ThemeToggle />

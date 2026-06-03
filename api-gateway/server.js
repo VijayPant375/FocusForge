@@ -14,6 +14,11 @@ const USER_SERVICE = process.env.USER_SERVICE_URL;
 const HABIT_SERVICE = process.env.HABIT_SERVICE_URL;
 const ANALYTICS_SERVICE = process.env.ANALYTICS_SERVICE_URL;
 const AI_SERVICE = process.env.AI_SERVICE_URL;
+const NOTIFICATION_SERVICE = process.env.NOTIFICATION_SERVICE_URL;
+
+if (!NOTIFICATION_SERVICE) {
+  console.warn('[GATEWAY] WARNING: NOTIFICATION_SERVICE_URL is not set. /api/notifications will fail.');
+}
 
 app.get('/health', (req, res) => {
   res.json({ status: 'API Gateway is running' });
@@ -47,6 +52,7 @@ app.use('/api/users', (req, res) => forwardRequest(USER_SERVICE, req, res));
 app.use('/api/habits', (req, res) => forwardRequest(HABIT_SERVICE, req, res));
 app.use('/api/analytics', (req, res) => forwardRequest(ANALYTICS_SERVICE, req, res));
 app.use('/api/ai', (req, res) => forwardRequest(AI_SERVICE, req, res));
+app.use('/api/notifications', (req, res) => forwardRequest(NOTIFICATION_SERVICE, req, res));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

@@ -37,6 +37,15 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
     depends_on: [mongodb]
+  notification-service:
+    build: ./notification-service
+    ports: ["5005:5005"]
+    environment:
+      - PORT=5005
+      - JWT_SECRET=${JWT_SECRET}
+      - MONGODB_URI=${HABIT_DB_URI}
+      - HABIT_SERVICE_URL=http://habit-service:5002
+    depends_on: [mongodb]
   api-gateway:
     build: ./api-gateway
     ports: ["5000:5000"]
@@ -46,7 +55,8 @@ services:
       - HABIT_SERVICE_URL=${HABIT_SERVICE_URL}
       - ANALYTICS_SERVICE_URL=${ANALYTICS_SERVICE_URL}
       - AI_SERVICE_URL=${AI_SERVICE_URL}
-    depends_on: [user-service, habit-service, analytics-service, ai-service]
+      - NOTIFICATION_SERVICE_URL=http://notification-service:5005
+    depends_on: [user-service, habit-service, analytics-service, ai-service, notification-service]
   frontend:
     build: ./frontend
     ports: ["5173:80"]

@@ -63,4 +63,8 @@ export const aiAPI = {
   getCoachingMessage: (data) => api.post('/ai/coaching-message', data),
 };
 
+export const notificationAPI = {
+  getPending: () => api.get('/notifications'),
+};
+
 export default api;
