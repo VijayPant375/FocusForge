@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { useTheme } from '../context/ThemeContext';
 import ThemeToggle from '../components/ThemeToggle';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -41,18 +40,9 @@ const TECH_BADGES = [
   { label: 'Render', color: 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300' },
 ];
 
-export default function Landing() {
+export default function Landing({ setAuth }) {
   const [demoLoading, setDemoLoading] = useState(false);
   const navigate = useNavigate();
-  const { theme } = useTheme();
-
-  // If already logged in, skip the landing page and go straight to dashboard
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [navigate]);
 
   const handleDemoLogin = async () => {
     setDemoLoading(true);
@@ -65,7 +55,9 @@ export default function Landing() {
       if (res.data.user) {
         localStorage.setItem('user', JSON.stringify(res.data.user));
       }
-      toast.success('Welcome to FocusForge demo!');
+      // Update App's isAuthenticated state BEFORE navigating
+      // so ProtectedRoute lets us through
+      if (setAuth) setAuth(true);
       navigate('/dashboard');
     } catch (err) {
       toast.error('Demo unavailable right now. Try signing up instead.');

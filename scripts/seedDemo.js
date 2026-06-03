@@ -173,7 +173,7 @@ async function seed() {
   for (const template of HABIT_TEMPLATES) {
     const completions = buildCompletions(template.skipFn);
     const habit = await Habit.create({
-      userId: demoUser._id.toString(),
+      userId: demoUser._id,   // ObjectId — matches what habit-service stores via req.userId
       name: template.name,
       category: template.category,
       description: template.description,
