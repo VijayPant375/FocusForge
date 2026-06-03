@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Landing from './pages/Landing';
 import { Toaster } from 'react-hot-toast';
 
 function App() {
@@ -18,7 +19,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
       <Toaster 
         position="bottom-right"
         toastOptions={{
@@ -32,30 +33,21 @@ function App() {
           },
         }}
       />
-      <div className="flex-1">
-        <Router>
-          <Routes>
-            <Route path="/login" element={<Login setAuth={setIsAuthenticated} />} />
-            <Route path="/register" element={<Register setAuth={setIsAuthenticated} />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard setAuth={setIsAuthenticated} />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/" element={<Navigate to="/dashboard" />} />
-          </Routes>
-        </Router>
-      </div>
-
-      {/* Universal Footer */}
-      <footer className="w-full bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-4 mt-auto transition-colors duration-300">
-        <div className="container mx-auto px-4 text-center text-gray-500 dark:text-gray-400 text-sm font-medium">
-          Built with <span className="text-brand-purple">⚡</span> by <span className="text-gray-900 dark:text-gray-100 font-semibold">Vijay Pant</span> | FocusForge © {new Date().getFullYear()}
-        </div>
-      </footer>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login setAuth={setIsAuthenticated} />} />
+          <Route path="/register" element={<Register setAuth={setIsAuthenticated} />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard setAuth={setIsAuthenticated} />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/" element={<Landing />} />
+        </Routes>
+      </Router>
     </div>
   );
 }

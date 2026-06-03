@@ -49,6 +49,15 @@ function Dashboard({ setAuth }) {
 
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isDemo = user?.email === 'demo@focusforge.app';
+  const [demoBannerDismissed, setDemoBannerDismissed] = useState(() =>
+    sessionStorage.getItem('demo_banner_dismissed') === 'true'
+  );
+
+  const handleDismissDemoBanner = () => {
+    sessionStorage.setItem('demo_banner_dismissed', 'true');
+    setDemoBannerDismissed(true);
+  };
 
   useEffect(() => {
     fetchData();
@@ -214,6 +223,30 @@ function Dashboard({ setAuth }) {
         onShowBadges={() => setShowBadges(true)}
         onShowShare={() => setShowShare(true)}
       />
+
+      {/* Demo banner */}
+      {isDemo && !demoBannerDismissed && (
+        <div className="w-full bg-amber-50 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-700/50">
+          <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
+            <p className="text-sm text-amber-800 dark:text-amber-200 flex items-center gap-2">
+              <span>👋</span>
+              <span>
+                <strong>You're viewing the demo account.</strong>{' '}Data resets daily.
+                Want to keep your habits?{' '}
+                <a href="/register" className="underline font-semibold hover:opacity-80 transition-opacity">Sign up free</a>
+              </span>
+            </p>
+            <button
+              id="demo-banner-dismiss"
+              onClick={handleDismissDemoBanner}
+              className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 transition-colors flex-shrink-0 text-lg leading-none"
+              aria-label="Dismiss demo banner"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {chainSuggestion && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-30 animate-fade-in-up">

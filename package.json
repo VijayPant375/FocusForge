@@ -1,0 +1,14 @@
+{
+  "name": "focusforge",
+  "version": "1.0.0",
+  "description": "FocusForge — Gamified microservices habit tracker",
+  "private": true,
+  "scripts": {
+    "seed:demo": "node scripts/seedDemo.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.0.0",
+    "mongoose": "^7.0.0"
+  }
+}
