@@ -17,6 +17,22 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Auto-logout on 401 — clears stale token and redirects to login
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      // Only redirect if we're not already on an auth page
+      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register') && window.location.pathname !== '/') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const authAPI = {
   register: (data) => api.post('/users/register', data),
   login: (data) => api.post('/users/login', data),

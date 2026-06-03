@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -45,6 +45,14 @@ export default function Landing() {
   const [demoLoading, setDemoLoading] = useState(false);
   const navigate = useNavigate();
   const { theme } = useTheme();
+
+  // If already logged in, skip the landing page and go straight to dashboard
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [navigate]);
 
   const handleDemoLogin = async () => {
     setDemoLoading(true);

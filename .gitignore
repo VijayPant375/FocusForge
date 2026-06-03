@@ -1,6 +1,9 @@
 ### Dependencies
 node_modules/
 
+# Root-level package-lock.json (used for seedDemo only, not needed on Render)
+/package-lock.json
+
 ### Build output
 dist/
 build/
