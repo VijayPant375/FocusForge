@@ -46,10 +46,24 @@ export default function PomodoroTimer({ habitName, onClose }) {
   const circ = 2 * Math.PI * radius;
   const strokeDash = circ - (progress / 100) * circ;
 
+  const notifyDone = async (goingToBreak) => {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      await Notification.requestPermission();
+    }
+    if (Notification.permission === 'granted') {
+      new Notification('FocusForge', {
+        body: goingToBreak ? 'Focus session complete! Time for a break.' : 'Break over! Time to focus.',
+        icon: '/icon-192.png'
+      });
+    }
+  };
+
   const switchPhase = useCallback(() => {
     playSound(sound);
     setIsWork(prev => {
       const next = !prev;
+      notifyDone(next === false); // goingToBreak = true if next is false (break phase)
       setTimeLeft(next ? PRESETS[preset].work : PRESETS[preset].break);
       return next;
     });

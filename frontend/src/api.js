@@ -26,7 +26,7 @@ api.interceptors.response.use(
       localStorage.removeItem('user');
       // Only redirect if we're not already on an auth page
       if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register') && window.location.pathname !== '/') {
-        window.location.href = '/login';
+        window.location.href = '/';
       }
     }
     return Promise.reject(error);

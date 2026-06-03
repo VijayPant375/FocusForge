@@ -113,9 +113,9 @@ function Dashboard({ setAuth }) {
   const fetchData = async () => {
     try {
       const [habitsRes, statsRes, insightsRes] = await Promise.all([
-        habitAPI.getAll(),
-        analyticsAPI.getStats(),
-        aiAPI.getInsights(),
+        habitAPI.getAll().catch(e => { console.error('Habit fetch error:', e); return { data: { habits: [] } }; }),
+        analyticsAPI.getStats().catch(e => { console.error('Stats fetch error:', e); return { data: { totalHabits: 0, completedToday: 0, completionRate: 0, avgStreak: 0 } }; }),
+        aiAPI.getInsights().catch(e => { console.error('Insights fetch error:', e); return { data: { insights: [] } }; }),
       ]);
 
       const nextHabits = habitsRes.data.habits;
@@ -134,7 +134,7 @@ function Dashboard({ setAuth }) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setAuth(false);
-    navigate('/login');
+    navigate('/');
   };
 
   const handleCompleteClick = (habit) => {
