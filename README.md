@@ -2,7 +2,7 @@
 
 # FocusForge - Gamified Habit Tracking Platform
 
-**A full-stack microservices habit tracker with analytics, streak systems, templates, voice commands, and rule-based AI insights.**
+**A production-deployed full-stack microservices habit tracker with gamification, analytics, and AI coaching powered by Google Gemini 1.5 Flash**
 
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-Frontend-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev)
@@ -12,8 +12,20 @@
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com)
 [![JWT](https://img.shields.io/badge/Auth-JWT-orange?style=flat-square)](https://jwt.io)
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-UI-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![Gemini API](https://img.shields.io/badge/Gemini_1.5_Flash-AI-8E75B2?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev)
+[![Render](https://img.shields.io/badge/Render-Deployment-46E3B7?style=flat-square&logo=render&logoColor=white)](https://render.com)
 
 </div>
+
+---
+
+## 🚀 Live Demo
+
+🌐 **[https://focusforge-frontend-piek.onrender.com](https://focusforge-frontend-piek.onrender.com)**
+
+Demo credentials (pre-seeded with 30 days of habit history):
+Email: demo@focusforge.app
+Password: demo1234
 
 ---
 
@@ -73,7 +85,7 @@ Unlike a basic CRUD tracker, FocusForge includes habit chains, mood and energy c
 - Feedback based on streak strength, completion behavior, category concentration, and timing patterns
 - Welcome state and fallback insights for new or low-activity users
 
-> Important: the current "AI insights" service is **rule-based**, not LLM-powered. It analyzes habit data and returns generated motivational or pattern-based insight messages.
+> Important: the current "AI insights" service uses Gemini 1.5 Flash to generate personalized coaching messages and pattern detection based on the user's habit history.
 
 ---
 
@@ -115,7 +127,7 @@ FocusForge follows a microservices architecture with a dedicated frontend, an AP
 | `user-service` | `5001` | Registration, login, JWT issuance, profile lookup |
 | `habit-service` | `5002` | Habit CRUD, completion, streaks, chains, reminders, mood logging |
 | `analytics-service` | `5003` | Habit statistics and weekly summary data |
-| `ai-service` | `5004` | Rule-based insights generated from habit data |
+| `ai-service` | `5004` | Gemini 1.5 Flash — insights, failure pattern detection, coaching messages |
 | `mongodb` | `27017` | Persistent data store |
 
 ### Request Flow
@@ -268,7 +280,10 @@ GET /api/analytics/weekly
 ### AI Service
 
 ```text
-GET /api/ai/insights
+GET  /api/ai/insights
+POST /api/ai/insights
+POST /api/ai/failure-patterns
+POST /api/ai/coaching-message
 ```
 
 ### Health Check
@@ -452,7 +467,7 @@ FocusForge/
 |-- user-service/         # Auth, users, JWT issuing, seed data
 |-- habit-service/        # Habit CRUD, completions, chains, reminders, mood data
 |-- analytics-service/    # Stats and weekly summaries
-|-- ai-service/           # Rule-based habit insights
+|-- ai-service/           # Gemini-powered insights, coaching, and failure pattern detection
 |-- frontend/             # React + Vite application
 |-- docker-compose.yml    # Local orchestration
 |-- start.ps1             # Windows multi-service startup helper
@@ -511,15 +526,18 @@ The repository already contains a broader roadmap in [FUTURE_PLAN.md](FUTURE_PLA
 - Mood and energy check-ins
 - Habit chains
 - Reminder settings
-- Pomodoro integration
+- AI coaching and insights (Gemini 1.5 Flash)
+- Pomodoro timer
+- PWA / installable app
+- Landing page with demo mode
+- Failure pattern detection
+- Coaching messages on completion and miss events
 
 ### Planned or Partial
-- Browser push notifications
-- richer AI coaching and predictive suggestions
+- Browser push notifications (implemented locally, requires push service configuration)
 - weekly mood trend chart
 - social accountability features
 - community-shared templates
-- PWA/mobile-first improvements
 - advanced export and import options
 - onboarding flow
 - broader deployment polish and marketing assets
@@ -528,10 +546,9 @@ The repository already contains a broader roadmap in [FUTURE_PLAN.md](FUTURE_PLA
 
 ## Limitations and Notes
 
-- The insights service is rule-based rather than powered by an external AI model.
 - Voice commands depend on browser speech recognition support and may not work in every browser.
-- Reminder settings are stored in data and exposed in UI, but notification delivery is not yet implemented.
-- There is currently no automated test suite included in the repository.
+- Notification delivery is implemented as console-logged reminders; browser push notifications require a configured push service.
+- There is no automated test suite included in the repository.
 - The manual startup script is Windows-oriented; Linux and macOS users should launch services manually.
 
 ---
