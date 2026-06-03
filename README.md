@@ -2,7 +2,7 @@
 
 # FocusForge - Gamified Habit Tracking Platform
 
-**A production-deployed full-stack microservices habit tracker with gamification, analytics, and AI coaching powered by Google Gemini 1.5 Flash**
+**A production-deployed full-stack microservices habit tracker with gamification, analytics, and AI coaching powered by Google Gemini 2.5 Flash**
 
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-Frontend-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev)
@@ -12,7 +12,7 @@
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com)
 [![JWT](https://img.shields.io/badge/Auth-JWT-orange?style=flat-square)](https://jwt.io)
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-UI-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![Gemini API](https://img.shields.io/badge/Gemini_1.5_Flash-AI-8E75B2?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev)
+[![Gemini API](https://img.shields.io/badge/Gemini_2.5_Flash-AI-8E75B2?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev)
 [![Render](https://img.shields.io/badge/Render-Deployment-46E3B7?style=flat-square&logo=render&logoColor=white)](https://render.com)
 
 </div>
@@ -85,7 +85,7 @@ Unlike a basic CRUD tracker, FocusForge includes habit chains, mood and energy c
 - Feedback based on streak strength, completion behavior, category concentration, and timing patterns
 - Welcome state and fallback insights for new or low-activity users
 
-> Important: the current "AI insights" service uses Gemini 1.5 Flash to generate personalized coaching messages and pattern detection based on the user's habit history.
+> Important: the current "AI insights" service uses Gemini 2.5 Flash to generate personalized coaching messages and pattern detection based on the user's habit history.
 
 ---
 
@@ -104,18 +104,18 @@ FocusForge follows a microservices architecture with a dedicated frontend, an AP
 |         API Gateway          |
 | Routing, CORS, timeout,      |
 | service forwarding           |
-+------+---------+--------+----+
-       |         |        |
-       v         v        v
- +-----------+ +-----------+ +---------------+ +-----------+
- |   User    | |   Habit   | |   Analytics   | |    AI     |
- | Service   | | Service   | |    Service    | |  Service  |
- +-----------+ +-----------+ +---------------+ +-----------+
-        \          |             |             /
-         \         |             |            /
-          +---------------------------------+
-          |         MongoDB Database        |
-          +---------------------------------+
++---+------+--------+----+-----+
+    |      |        |    |     |
+    v      v        v    v     v
+ +-----------+ +-----------+ +---------------+ +-----------+ +------------------+
+ |   User    | |   Habit   | |   Analytics   | |    AI     | |  Notification    |
+ | Service   | | Service   | |    Service    | |  Service  | |    Service       |
+ +-----------+ +-----------+ +---------------+ +-----------+ +------------------+
+        \          |             |             |            /
+         \         |             |             |           /
+          +---------------------------------------------------+
+          |                  MongoDB Database                  |
+          +---------------------------------------------------+
 ```
 
 ### Service Breakdown
@@ -127,7 +127,8 @@ FocusForge follows a microservices architecture with a dedicated frontend, an AP
 | `user-service` | `5001` | Registration, login, JWT issuance, profile lookup |
 | `habit-service` | `5002` | Habit CRUD, completion, streaks, chains, reminders, mood logging |
 | `analytics-service` | `5003` | Habit statistics and weekly summary data |
-| `ai-service` | `5004` | Gemini 1.5 Flash — insights, failure pattern detection, coaching messages |
+| `ai-service` | `5004` | Gemini 2.5 Flash — insights, failure pattern detection, coaching messages |
+| `notification-service` | `5005` | Pending reminder lookup, habit-service proxy, browser notification trigger |
 | `mongodb` | `27017` | Persistent data store |
 
 ### Request Flow
@@ -176,6 +177,7 @@ Response Back to Frontend
 | bcryptjs | Password hashing |
 | Morgan | API request logging in gateway |
 | CORS | Cross-origin support |
+| `@google/generative-ai` | Gemini API client for AI insights, coaching messages, and failure pattern detection |
 
 ### DevOps and Deployment
 
@@ -384,7 +386,7 @@ This script:
 - starts all backend services
 - starts the Vite frontend
 
-If you prefer to run everything manually, open 6 terminals:
+If you prefer to run everything manually, open 7 terminals:
 
 ```bash
 # Terminal 1
@@ -404,6 +406,9 @@ cd ai-service && npm start
 
 # Terminal 6
 cd frontend && npm run dev
+
+# Terminal 7
+cd notification-service && npm start
 ```
 
 ### 3. Seed Sample Data
@@ -423,11 +428,20 @@ http://localhost:5173
 
 ## Demo Account
 
-After seeding data, use the default test account:
+FocusForge has two demo accounts depending on where you're running the app:
+
+**Local development** (after running `npm run seed` in `user-service` and `habit-service`):
 
 ```text
 Email:    test@example.com
 Password: password123
+```
+
+**Live deployment on Render** (pre-seeded with 30 days of habit history):
+
+```text
+Email:    demo@focusforge.app
+Password: demo1234
 ```
 
 ---
@@ -526,7 +540,7 @@ The repository already contains a broader roadmap in [FUTURE_PLAN.md](FUTURE_PLA
 - Mood and energy check-ins
 - Habit chains
 - Reminder settings
-- AI coaching and insights (Gemini 1.5 Flash)
+- AI coaching and insights (Gemini 2.5 Flash)
 - Pomodoro timer
 - PWA / installable app
 - Landing page with demo mode
@@ -547,7 +561,7 @@ The repository already contains a broader roadmap in [FUTURE_PLAN.md](FUTURE_PLA
 ## Limitations and Notes
 
 - Voice commands depend on browser speech recognition support and may not work in every browser.
-- Notification delivery is implemented as console-logged reminders; browser push notifications require a configured push service.
+- In-browser notifications (chime + Web Notification API) fire when the tab is open. Background VAPID push notifications (delivered when the tab is closed) are not yet configured and require a push service.
 - There is no automated test suite included in the repository.
 - The manual startup script is Windows-oriented; Linux and macOS users should launch services manually.
 
