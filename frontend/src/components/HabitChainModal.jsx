@@ -6,7 +6,11 @@ const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function HabitChainModal({ habit, habits, onClose, onSuccess }) {
   const [chainToId, setChainToId] = useState(habit.chainedTo || '');
-  const [reminder, setReminder] = useState(habit.reminder || { enabled: false, time: '08:00', days: [...DAYS] });
+  const [reminder, setReminder] = useState({
+    enabled: habit.reminder?.enabled ?? false,
+    time: habit.reminder?.time ?? '08:00',
+    days: habit.reminder?.days ?? [...DAYS]
+  });
   const [loading, setLoading] = useState(false);
 
   const otherHabits = habits.filter(h => h._id !== habit._id);

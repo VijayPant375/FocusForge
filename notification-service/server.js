@@ -15,7 +15,7 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ Notification Service: MongoDB connected'))
   .catch(err => console.error('❌ MongoDB connection error:', err));
 
-app.get('/notifications', authMiddleware, async (req, res) => {
+app.get('/', authMiddleware, async (req, res) => {
   try {
     const response = await axios.get(
       `${process.env.HABIT_SERVICE_URL}/`,

@@ -223,6 +223,7 @@ function Dashboard({ setAuth }) {
         onLogout={handleLogout}
         onShowBadges={() => setShowBadges(true)}
         onShowShare={() => setShowShare(true)}
+        habits={habits}
       />
 
       {/* Demo banner */}
@@ -598,7 +599,31 @@ function XPHeroCard({ habits }) {
   );
 }
 
-function Navbar({ user, onLogout, onShowBadges, onShowShare }) {
+const playChime = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'triangle';
+    osc.frequency.value = 1047;
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
+    osc.start();
+    osc.stop(ctx.currentTime + 1.5);
+  } catch (_) {}
+};
+
+const notifyBrowser = async (title, body) => {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') await Notification.requestPermission();
+  if (Notification.permission === 'granted') {
+    new Notification(title, { body, icon: '/icon-192.png' });
+  }
+};
+
+function Navbar({ user, onLogout, onShowBadges, onShowShare, habits }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   
@@ -622,7 +647,7 @@ function Navbar({ user, onLogout, onShowBadges, onShowShare }) {
       }
     };
     fetchNotifications();
-  }, []);
+  }, [habits]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -633,6 +658,30 @@ function Navbar({ user, onLogout, onShowBadges, onShowShare }) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (notifications.length === 0) return;
+    
+    const interval = setInterval(() => {
+      const now = new Date();
+      const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const triggeredKeys = JSON.parse(sessionStorage.getItem('triggered_reminders') || '[]');
+
+      notifications.forEach(habit => {
+        if (habit.reminder?.time === timeString) {
+          const triggerKey = `${habit._id}-${now.toLocaleDateString()}`;
+          if (!triggeredKeys.includes(triggerKey)) {
+            playChime();
+            notifyBrowser('FocusForge Reminder', `Time for your habit: ${habit.name}`);
+            triggeredKeys.push(triggerKey);
+            sessionStorage.setItem('triggered_reminders', JSON.stringify(triggeredKeys));
+          }
+        }
+      });
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [notifications]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
