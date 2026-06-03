@@ -13,7 +13,11 @@
 
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const dns = require('dns');
 require('dotenv').config({ path: './habit-service/.env' });
+
+// Force Google DNS — system/ISP DNS blocks SRV record queries which mongodb+srv:// requires
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -142,7 +146,7 @@ const HABIT_TEMPLATES = [
 
 async function seed() {
   console.log('🔌 Connecting to MongoDB Atlas...');
-  await mongoose.connect(MONGODB_URI);
+  await mongoose.connect(MONGODB_URI, { family: 4, serverSelectionTimeoutMS: 10000 });
   console.log('✅ Connected');
 
   // 1. Delete existing demo user
