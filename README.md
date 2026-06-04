@@ -14,6 +14,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-UI-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![Gemini API](https://img.shields.io/badge/Gemini_2.5_Flash-AI-8E75B2?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev)
 [![Render](https://img.shields.io/badge/Render-Deployment-46E3B7?style=flat-square&logo=render&logoColor=white)](https://render.com)
+[![CI](https://github.com/VijayPant375/FocusForge/actions/workflows/ci.yml/badge.svg)](https://github.com/VijayPant375/FocusForge/actions/workflows/ci.yml)
 
 </div>
 
@@ -33,7 +34,7 @@ Password: demo1234
 
 **FocusForge** is a habit-building platform designed around consistency, focus, and momentum. It combines a polished React dashboard with a Node.js microservices backend so users can create habits, track completions, build streaks, view analytics, unlock achievements, and receive personalized insight messages based on their activity patterns.
 
-Unlike a basic CRUD tracker, FocusForge includes habit chains, mood and energy check-ins, Pomodoro support, habit template bundles, achievement progression, downloadable share cards, and browser-based voice commands. The backend is split into dedicated services for authentication, habit operations, analytics, and insights, all routed through a central API gateway.
+Unlike a basic CRUD tracker, FocusForge includes habit chains, mood and energy check-ins, Pomodoro support, habit template bundles, achievement progression, downloadable share cards, and browser-based voice commands. The backend is split into dedicated services for authentication, habit operations, analytics, insights, and notifications, all routed through a central API gateway.
 
 ---
 
@@ -91,7 +92,7 @@ Unlike a basic CRUD tracker, FocusForge includes habit chains, mood and energy c
 
 ## Architecture
 
-FocusForge follows a microservices architecture with a dedicated frontend, an API gateway, and four backend services.
+FocusForge follows a microservices architecture with a dedicated frontend, an API gateway, and five backend services.
 
 ```text
 +------------------------------+
@@ -138,7 +139,7 @@ User Action in Dashboard
     ↓
 Frontend API Layer (`frontend/src/api.js`)
     ↓
-API Gateway (`/api/users`, `/api/habits`, `/api/analytics`, `/api/ai`)
+API Gateway (`/api/users`, `/api/habits`, `/api/analytics`, `/api/ai`, `/api/notifications`)
     ↓
 Target Microservice
     ↓
@@ -300,7 +301,7 @@ GET /health
 
 ### Prerequisites
 
-- Node.js 16 or newer
+- Node.js 20 or newer
 - npm
 - MongoDB local instance or Docker
 - Docker and Docker Compose for the easiest setup
@@ -314,6 +315,8 @@ MONGO_INITDB_DATABASE=focusforge
 JWT_SECRET=your_jwt_secret
 USER_DB_URI=mongodb://mongodb:27017/focusforge-users
 HABIT_DB_URI=mongodb://mongodb:27017/focusforge-habits
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-2.5-flash
 USER_SERVICE_URL=http://user-service:5001
 HABIT_SERVICE_URL=http://habit-service:5002
 ANALYTICS_SERVICE_URL=http://analytics-service:5003
@@ -369,6 +372,7 @@ cd ../user-service && npm install
 cd ../habit-service && npm install
 cd ../analytics-service && npm install
 cd ../ai-service && npm install
+cd ../notification-service && npm install
 cd ../frontend && npm install
 ```
 
@@ -451,7 +455,7 @@ Password: demo1234
 The repository includes deployment notes for Render in [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ### Render Strategy
-- Deploy `user-service`, `habit-service`, `analytics-service`, and `ai-service` as separate Node web services
+- Deploy `user-service`, `habit-service`, `analytics-service`, `ai-service`, and `notification-service` as separate Node web services
 - Deploy `api-gateway` as its own Node service with upstream service URLs configured as environment variables
 - Deploy the frontend as a static site after pointing it at the live API gateway. *(If deploying the frontend as a Docker container, ensure `ARG VITE_API_URL` is passed during build)*.
 - **Important**: Backend Dockerfiles omit `EXPOSE` instructions to ensure Render's internal router correctly forwards traffic to the default `PORT=10000`.
@@ -477,17 +481,18 @@ http://localhost:5000/api
 
 ```text
 FocusForge/
-|-- api-gateway/          # Gateway routing to backend services
-|-- user-service/         # Auth, users, JWT issuing, seed data
-|-- habit-service/        # Habit CRUD, completions, chains, reminders, mood data
-|-- analytics-service/    # Stats and weekly summaries
-|-- ai-service/           # Gemini-powered insights, coaching, and failure pattern detection
-|-- frontend/             # React + Vite application
-|-- docker-compose.yml    # Local orchestration
-|-- start.ps1             # Windows multi-service startup helper
-|-- DEPLOYMENT.md         # Deployment notes
-|-- DOCKER.md             # Quick Docker reference
-|-- FUTURE_PLAN.md        # Feature roadmap and ideas
+|-- api-gateway/           # Gateway routing to backend services
+|-- user-service/          # Auth, users, JWT issuing, seed data
+|-- habit-service/         # Habit CRUD, completions, chains, reminders, mood data
+|-- analytics-service/     # Stats and weekly summaries
+|-- ai-service/            # Gemini-powered insights, coaching, and failure pattern detection
+|-- notification-service/  # Reminder lookup, MongoDB cron sweep, bell-icon API
+|-- frontend/              # React + Vite application
+|-- .github/workflows/     # GitHub Actions CI pipeline
+|-- docker-compose.yml     # Local orchestration
+|-- start.ps1              # Windows multi-service startup helper
+|-- DEPLOYMENT.md          # Deployment notes
+|-- DOCKER.md              # Quick Docker reference
 `-- README.md
 ```
 
@@ -500,31 +505,34 @@ frontend/src/
 |-- context/ThemeContext.jsx
 |-- hooks/useGamification.js
 |-- pages/
+|   |-- Landing.jsx
 |   |-- Login.jsx
 |   |-- Register.jsx
 |   `-- Dashboard.jsx
 `-- components/
     |-- AddHabitModal.jsx
-    |-- EditHabitModal.jsx
+    |-- AnimatedCounter.jsx
+    |-- CircularProgress.jsx
     |-- DeleteConfirmModal.jsx
-    |-- WeeklyChart.jsx
-    |-- HabitHeatmap.jsx
-    |-- RadialChart.jsx
-    |-- PomodoroTimer.jsx
-    |-- MoodCheckInModal.jsx
-    |-- TemplatesModal.jsx
-    |-- HabitChainModal.jsx
+    |-- EditHabitModal.jsx
     |-- GamificationUI.jsx
+    |-- HabitChainModal.jsx
+    |-- HabitHeatmap.jsx
+    |-- MoodCheckInModal.jsx
+    |-- PomodoroTimer.jsx
+    |-- RadialChart.jsx
     |-- ShareCardModal.jsx
+    |-- SkeletonLoader.jsx
+    |-- StreakFlame.jsx
+    |-- TemplatesModal.jsx
+    |-- ThemeToggle.jsx
     |-- VoiceCommands.jsx
-    `-- ThemeToggle.jsx
+    `-- WeeklyChart.jsx
 ```
 
 ---
 
 ## Roadmap
-
-The repository already contains a broader roadmap in [FUTURE_PLAN.md](FUTURE_PLAN.md). At a high level:
 
 ### Already Implemented
 - Microservices architecture
