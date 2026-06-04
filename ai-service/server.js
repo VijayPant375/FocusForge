@@ -8,7 +8,7 @@ const Habit = require('./models/Habit');
 const authMiddleware = require('./middleware/auth');
 
 const app = express();
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const INSIGHT_ICONS = ['🤖', '📈', '🎯'];
 
 app.use(cors());
