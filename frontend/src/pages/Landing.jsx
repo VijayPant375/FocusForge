@@ -10,7 +10,7 @@ const FEATURES = [
   {
     emoji: '🤖',
     title: 'AI-Powered Coaching',
-    desc: 'Gemini 1.5 Flash analyzes your habits and delivers personalized insights, failure pattern detection, and motivational coaching messages.',
+    desc: 'Gemini 2.5 Flash analyzes your habits and delivers personalized insights, failure pattern detection, and motivational coaching messages.',
     color: 'from-violet-500/10 to-purple-500/10 border-violet-200 dark:border-violet-800/50',
     badge: 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300',
   },
@@ -99,7 +99,7 @@ export default function Landing({ setAuth }) {
       <div className="w-full bg-gradient-to-r from-violet-600 to-pink-500 py-2.5 px-4 text-center text-white text-sm font-medium tracking-wide">
         <span className="opacity-90">⚡</span>{' '}
         5 independent microservices + API gateway — deployed on Render
-        <span className="ml-3 opacity-75 text-xs">| Gemini 1.5 Flash AI · MongoDB Atlas · Docker</span>
+        <span className="ml-3 opacity-75 text-xs">| Gemini 2.5 Flash AI · MongoDB Atlas · Docker</span>
       </div>
 
       {/* ── Hero ── */}
