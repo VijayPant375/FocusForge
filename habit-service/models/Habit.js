@@ -35,7 +35,7 @@ const habitSchema = new mongoose.Schema({
   reminder: {
     enabled: { type: Boolean, default: false },
     time: { type: String, default: '08:00' },
-    days: { type: [String], default: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] }
+    days: { type: [String], default: [] }
   },
   completions: [{
     date: {

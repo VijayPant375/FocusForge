@@ -830,11 +830,16 @@ function Navbar({ user, onLogout, onShowBadges, onShowShare, habits }) {
     
     const interval = setInterval(() => {
       const now = new Date();
-      const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       const triggeredKeys = JSON.parse(sessionStorage.getItem('triggered_reminders') || '[]');
 
       notifications.forEach(habit => {
-        if (habit.reminder?.time === timeString) {
+        if (!habit.reminder?.time) return;
+        
+        const [hours, minutes] = habit.reminder.time.split(':').map(Number);
+        const reminderTime = new Date(now);
+        reminderTime.setHours(hours, minutes, 0, 0);
+
+        if (now.getTime() >= reminderTime.getTime()) {
           const triggerKey = `${habit._id}-${now.toLocaleDateString()}`;
           if (!triggeredKeys.includes(triggerKey)) {
             playChime();

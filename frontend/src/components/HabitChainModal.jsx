@@ -9,7 +9,7 @@ export default function HabitChainModal({ habit, habits, onClose, onSuccess }) {
   const [reminder, setReminder] = useState({
     enabled: habit.reminder?.enabled ?? false,
     time: habit.reminder?.time ?? '08:00',
-    days: habit.reminder?.days ?? [...DAYS]
+    days: (habit.reminder?.days?.length === 7 && !habit.reminder?.enabled) ? [] : (habit.reminder?.days || [])
   });
   const [loading, setLoading] = useState(false);
 
