@@ -36,7 +36,16 @@ app.post('/', authMiddleware, async (req, res) => {
 
 app.get('/', authMiddleware, async (req, res) => {
   try {
-    const habits = await Habit.find({ userId: req.userId }).sort({ createdAt: -1 });
+    const habits = await Habit.find({ userId: req.userId, archived: { $ne: true } }).sort({ createdAt: -1 });
+    res.json({ habits });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/archived', authMiddleware, async (req, res) => {
+  try {
+    const habits = await Habit.find({ userId: req.userId, archived: true }).sort({ createdAt: -1 });
     res.json({ habits });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -63,16 +72,32 @@ app.put('/:id', authMiddleware, async (req, res) => {
 
 app.delete('/:id', authMiddleware, async (req, res) => {
   try {
-    const habit = await Habit.findOneAndDelete({
+    const habit = await Habit.findOneAndUpdate({
       _id: req.params.id,
       userId: req.userId
-    });
+    }, { archived: true }, { new: true });
     
     if (!habit) {
       return res.status(404).json({ error: 'Habit not found' });
     }
     
-    res.json({ message: 'Habit deleted' });
+    res.json({ message: 'Habit archived' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.patch('/:id/restore', authMiddleware, async (req, res) => {
+  try {
+    const habit = await Habit.findOneAndUpdate(
+      { _id: req.params.id, userId: req.userId },
+      { archived: false },
+      { new: true }
+    );
+    if (!habit) {
+      return res.status(404).json({ error: 'Habit not found' });
+    }
+    res.json({ message: 'Habit restored', habit });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

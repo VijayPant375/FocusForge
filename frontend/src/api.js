@@ -44,6 +44,8 @@ export const habitAPI = {
   getAll: () => api.get('/habits'),
   update: (id, data) => api.put(`/habits/${id}`, data),
   delete: (id) => api.delete(`/habits/${id}`),
+  getArchived: () => api.get('/habits/archived'),
+  restore: (id) => api.patch(`/habits/${id}/restore`),
   complete: (id, data = {}) => api.post(`/habits/${id}/complete`, data),
   // 2.1 Chains
   setChain: (id, chainToId) => api.post(`/habits/${id}/chain`, { chainToId }),

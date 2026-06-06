@@ -36,6 +36,9 @@ function Dashboard({ setAuth }) {
   const [failurePatternsLoading, setFailurePatternsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const [archivedHabits, setArchivedHabits] = useState([]);
+  const [showArchived, setShowArchived] = useState(false);
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingHabit, setEditingHabit] = useState(null);
   const [deletingHabit, setDeletingHabit] = useState(null);
@@ -182,12 +185,37 @@ function Dashboard({ setAuth }) {
 
     try {
       await habitAPI.delete(deletingHabit._id);
-      toast.success('Habit deleted');
+      toast.success('Habit archived');
       fetchData();
+      if (showArchived) fetchArchived();
     } catch (error) {
       toast.error(error.response?.data?.error || 'Error deleting habit');
     } finally {
       setDeletingHabit(null);
+    }
+  };
+
+  const fetchArchived = async () => {
+    try {
+      const res = await habitAPI.getArchived();
+      setArchivedHabits(res.data.habits || []);
+    } catch (e) {
+      console.error('Archived fetch error:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (showArchived) fetchArchived();
+  }, [showArchived]);
+
+  const handleRestore = async (habitId) => {
+    try {
+      await habitAPI.restore(habitId);
+      toast.success('Habit restored');
+      fetchData();
+      if (showArchived) fetchArchived();
+    } catch (error) {
+      toast.error('Error restoring habit');
     }
   };
 
@@ -341,6 +369,42 @@ function Dashboard({ setAuth }) {
                   <HabitHeatmap habits={habits} />
                 </div>
               )}
+
+              {/* Archived Habits Section */}
+              <div className="mt-6 border-t border-gray-100 dark:border-gray-800 pt-5">
+                <button
+                  onClick={() => setShowArchived(!showArchived)}
+                  className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                >
+                  {showArchived ? '▼' : '▶'} Archived Habits
+                </button>
+                
+                {showArchived && (
+                  <div className="mt-4 space-y-3">
+                    {archivedHabits.length === 0 ? (
+                      <p className="text-sm text-gray-500">No archived habits.</p>
+                    ) : (
+                      archivedHabits.map((habit) => (
+                        <div key={habit._id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl">{CATEGORY_EMOJIS[habit.category] || CATEGORY_EMOJIS.default}</span>
+                            <div>
+                              <h4 className="font-semibold text-gray-900 dark:text-white text-sm">{habit.name}</h4>
+                              <p className="text-xs text-gray-500">{habit.frequency}</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleRestore(habit._id)}
+                            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 transition-colors"
+                          >
+                            Restore
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
