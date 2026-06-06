@@ -219,6 +219,17 @@ function Dashboard({ setAuth }) {
     }
   };
 
+  const handlePermanentDelete = async (habitId) => {
+    try {
+      await habitAPI.permanentDelete(habitId);
+      toast.success('Habit permanently deleted');
+      fetchData();
+      if (showArchived) fetchArchived();
+    } catch (error) {
+      toast.error('Error deleting habit');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen relative">
@@ -393,12 +404,20 @@ function Dashboard({ setAuth }) {
                               <p className="text-xs text-gray-500">{habit.frequency}</p>
                             </div>
                           </div>
-                          <button
-                            onClick={() => handleRestore(habit._id)}
-                            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 transition-colors"
-                          >
-                            Restore
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleRestore(habit._id)}
+                              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 transition-colors"
+                            >
+                              Restore
+                            </button>
+                            <button
+                              onClick={() => handlePermanentDelete(habit._id)}
+                              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </div>
                       ))
                     )}

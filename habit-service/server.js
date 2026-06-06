@@ -87,6 +87,21 @@ app.delete('/:id', authMiddleware, async (req, res) => {
   }
 });
 
+app.delete('/:id/permanent', authMiddleware, async (req, res) => {
+  try {
+    const habit = await Habit.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.userId
+    });
+    if (!habit) {
+      return res.status(404).json({ error: 'Habit not found' });
+    }
+    res.json({ message: 'Habit permanently deleted' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.patch('/:id/restore', authMiddleware, async (req, res) => {
   try {
     const habit = await Habit.findOneAndUpdate(

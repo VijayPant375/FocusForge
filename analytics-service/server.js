@@ -17,7 +17,7 @@ mongoose.connect(process.env.MONGODB_URI)
 
 app.get('/stats', authMiddleware, async (req, res) => {
   try {
-    const habits = await Habit.find({ userId: req.userId });
+    const habits = await Habit.find({ userId: req.userId, archived: { $ne: true } });
     
     const totalHabits = habits.length;
     const totalCompletions = habits.reduce((sum, h) => sum + h.completions.length, 0);
@@ -54,7 +54,7 @@ app.get('/stats', authMiddleware, async (req, res) => {
 
 app.get('/weekly', authMiddleware, async (req, res) => {
   try {
-    const habits = await Habit.find({ userId: req.userId });
+    const habits = await Habit.find({ userId: req.userId, archived: { $ne: true } });
     
     const weekData = [];
     const today = new Date();
