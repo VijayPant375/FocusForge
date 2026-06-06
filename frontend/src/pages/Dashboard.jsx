@@ -839,9 +839,11 @@ function Navbar({ user, onLogout, onShowBadges, onShowShare, habits }) {
         const todayName = dayNames[now.getDay()];
         if (!habit.reminder?.days?.includes(todayName)) return;
 
-        // Skip if completed today (checking local date string against completions)
-        const todayStr = now.toISOString().split('T')[0];
-        const isCompleted = habit.completions?.some(c => c.date?.startsWith(todayStr));
+        // Skip if completed today (checking local date against completions)
+        const isCompleted = habit.completions?.some(c => {
+          const compDate = new Date(c.date);
+          return compDate.toDateString() === now.toDateString();
+        });
         if (isCompleted) return;
         
         const [hours, minutes] = habit.reminder.time.split(':').map(Number);
@@ -849,7 +851,7 @@ function Navbar({ user, onLogout, onShowBadges, onShowShare, habits }) {
         reminderTime.setHours(hours, minutes, 0, 0);
 
         if (now.getTime() >= reminderTime.getTime()) {
-          const triggerKey = `${habit._id}-${now.toLocaleDateString()}`;
+          const triggerKey = `${habit._id}-${now.toLocaleDateString()}-${habit.reminder.time}`;
           if (!triggeredKeys.includes(triggerKey)) {
             playChime();
             notifyBrowser('FocusForge Reminder', `Time for your habit: ${habit.name}`);

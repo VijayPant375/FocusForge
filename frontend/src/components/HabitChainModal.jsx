@@ -88,18 +88,51 @@ export default function HabitChainModal({ habit, habits, onClose, onSuccess }) {
               <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>🔔 Reminder</h3>
               <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Browser push notification</p>
             </div>
-            <button
-              onClick={async () => {
-                const newEnabled = !reminder.enabled;
-                setReminder(r => ({ ...r, enabled: newEnabled }));
-                if (newEnabled && 'Notification' in window && Notification.permission !== 'granted') {
-                  await Notification.requestPermission();
-                }
-              }}
-              className={`relative w-11 h-6 rounded-full transition-colors ${reminder.enabled ? 'bg-purple-500' : 'bg-gray-500/30'}`}
-            >
-              <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${reminder.enabled ? 'left-6' : 'left-1'}`} />
-            </button>
+            <div className="flex gap-2 items-center">
+              {reminder.enabled && (
+                <button
+                  onClick={async () => {
+                    if ('Notification' in window && Notification.permission !== 'granted') {
+                      await Notification.requestPermission();
+                    }
+                    if (Notification.permission === 'granted') {
+                      new Notification('Test Reminder', { body: 'Notifications are working!', icon: '/icon-192.png' });
+                    } else {
+                      toast.error('Browser blocked notification permission.');
+                    }
+                    try {
+                      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                      const osc = ctx.createOscillator();
+                      const gain = ctx.createGain();
+                      osc.connect(gain);
+                      gain.connect(ctx.destination);
+                      osc.type = 'triangle';
+                      osc.frequency.value = 1047;
+                      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
+                      osc.start();
+                      osc.stop(ctx.currentTime + 1.5);
+                    } catch (_) {}
+                  }}
+                  className="px-2 py-1 text-[10px] uppercase font-bold tracking-wider rounded border border-[var(--glass-border)] hover:bg-white/10 transition-colors"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  Test
+                </button>
+              )}
+              <button
+                onClick={async () => {
+                  const newEnabled = !reminder.enabled;
+                  setReminder(r => ({ ...r, enabled: newEnabled }));
+                  if (newEnabled && 'Notification' in window && Notification.permission !== 'granted') {
+                    await Notification.requestPermission();
+                  }
+                }}
+                className={`relative w-11 h-6 rounded-full transition-colors ${reminder.enabled ? 'bg-purple-500' : 'bg-gray-500/30'}`}
+              >
+                <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${reminder.enabled ? 'left-6' : 'left-1'}`} />
+              </button>
+            </div>
           </div>
 
           {reminder.enabled && (
