@@ -37,6 +37,8 @@ export const authAPI = {
   register: (data) => api.post('/users/register', data),
   login: (data) => api.post('/users/login', data),
   getProfile: () => api.get('/users/profile'),
+  awardFreezeTokens: (amount) => api.post('/users/award-freeze', { amount }),
+  useFreezeToken: () => api.post('/users/freeze'),
 };
 
 export const habitAPI = {

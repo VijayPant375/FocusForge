@@ -86,6 +86,47 @@ app.get('/profile', authMiddleware, async (req, res) => {
   }
 });
 
+app.post('/award-freeze', authMiddleware, async (req, res) => {
+  try {
+    const { amount } = req.body;
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    user.freezeTokens = (user.freezeTokens || 0) + (amount || 1);
+    await user.save();
+    res.json({ freezeTokens: user.freezeTokens });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/freeze', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user || (user.freezeTokens || 0) <= 0) {
+      return res.status(400).json({ error: 'No freeze tokens available' });
+    }
+    
+    const habitsCollection = mongoose.connection.db.collection('habits');
+    const targetHabit = await habitsCollection.findOne({ userId: req.userId, currentStreak: 0, archived: { $ne: true } });
+    
+    if (!targetHabit) {
+      return res.status(400).json({ error: 'No broken streaks found to freeze' });
+    }
+
+    user.freezeTokens -= 1;
+    await user.save();
+
+    await habitsCollection.updateOne(
+      { _id: targetHabit._id },
+      { $set: { currentStreak: 1 } }
+    );
+
+    res.json({ message: 'Streak restored', freezeTokens: user.freezeTokens, habitName: targetHabit.name });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`✅ User Service running on port ${PORT}`);

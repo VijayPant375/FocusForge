@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { habitAPI, analyticsAPI, aiAPI, notificationAPI } from '../api';
+import { habitAPI, analyticsAPI, aiAPI, notificationAPI, authAPI } from '../api';
 import { Bell } from 'lucide-react';
 import AddHabitModal from '../components/AddHabitModal';
 import WeeklyChart from '../components/WeeklyChart';
@@ -22,7 +22,7 @@ import MoodCheckInModal from '../components/MoodCheckInModal';
 import TemplatesModal from '../components/TemplatesModal';
 import HabitChainModal from '../components/HabitChainModal';
 import { BadgesPanel, XPBar } from '../components/GamificationUI'; // XPBar moved to dashboard body in Phase 3
-import { useGamification } from '../hooks/useGamification';
+import { useGamification, computeGamification } from '../hooks/useGamification';
 
 import { VoiceMicButton } from '../components/VoiceCommands';
 import ShareCardModal from '../components/ShareCardModal';
@@ -35,6 +35,8 @@ function Dashboard({ setAuth }) {
   const [failurePatternHabit, setFailurePatternHabit] = useState('');
   const [failurePatternsLoading, setFailurePatternsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const [freezeTokens, setFreezeTokens] = useState(0);
 
   const [archivedHabits, setArchivedHabits] = useState([]);
   const [showArchived, setShowArchived] = useState(false);
@@ -116,16 +118,18 @@ function Dashboard({ setAuth }) {
 
   const fetchData = async () => {
     try {
-      const [habitsRes, statsRes, insightsRes] = await Promise.all([
+      const [habitsRes, statsRes, insightsRes, profileRes] = await Promise.all([
         habitAPI.getAll().catch(e => { console.error('Habit fetch error:', e); return { data: { habits: [] } }; }),
         analyticsAPI.getStats().catch(e => { console.error('Stats fetch error:', e); return { data: { totalHabits: 0, completedToday: 0, completionRate: 0, avgStreak: 0 } }; }),
         aiAPI.getInsights().catch(e => { console.error('Insights fetch error:', e); return { data: { insights: [] } }; }),
+        authAPI.getProfile().catch(e => { console.error('Profile error:', e); return { data: { user: { freezeTokens: 0 } } }; }),
       ]);
 
       const nextHabits = habitsRes.data.habits;
       setHabits(nextHabits);
       setStats(statsRes.data);
       setInsights(insightsRes.data.insights || []);
+      setFreezeTokens(profileRes.data.user?.freezeTokens || 0);
       await fetchFailurePatterns(nextHabits);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -147,6 +151,8 @@ function Dashboard({ setAuth }) {
 
   const handleCompleteWithMood = async (habitId, moodData) => {
     try {
+      const oldXP = computeGamification(habits).xp;
+
       const res = await habitAPI.complete(habitId, moodData);
       confetti({
         particleCount: 80,
@@ -167,7 +173,20 @@ function Dashboard({ setAuth }) {
         toast(coachingRes.data.message, { icon: '🤖' });
       }
 
-      fetchData();
+      await fetchData();
+
+      // Check XP threshold for freeze tokens
+      const newHabitsRes = await habitAPI.getAll();
+      const newXP = computeGamification(newHabitsRes.data.habits).xp;
+      const oldEarned = Math.floor(oldXP / 500);
+      const newEarned = Math.floor(newXP / 500);
+
+      if (newEarned > oldEarned) {
+        const tokensToAward = newEarned - oldEarned;
+        await authAPI.awardFreezeTokens(tokensToAward);
+        toast.success(`You earned ${tokensToAward} Freeze Token(s)! ❄️`);
+        setFreezeTokens(prev => prev + tokensToAward);
+      }
 
       if (res.data?.chainedHabit) {
         setChainSuggestion(res.data.chainedHabit);
@@ -175,6 +194,16 @@ function Dashboard({ setAuth }) {
       }
     } catch (error) {
       toast.error(error.response?.data?.error || 'Error completing habit');
+    }
+  };
+
+  const handleUseFreezeToken = async () => {
+    try {
+      const res = await authAPI.useFreezeToken();
+      toast.success(`Used a Freeze Token on "${res.data.habitName}"! ❄️`);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Error using freeze token');
     }
   };
 
@@ -318,7 +347,11 @@ function Dashboard({ setAuth }) {
         </div>
 
         {/* 3.2 — XP / Level hero card */}
-        <XPHeroCard habits={habits} />
+        <XPHeroCard 
+          habits={habits} 
+          freezeTokens={freezeTokens} 
+          onUseFreeze={handleUseFreezeToken} 
+        />
 
         {/* 3.3 + 3.4 — Main grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
@@ -654,7 +687,7 @@ function HabitCard({ habit, habits, onComplete, onEdit, onDelete, onTimer, onCha
 }
 
 // XP Hero card — uses same useGamification hook, displayed on dashboard
-function XPHeroCard({ habits }) {
+function XPHeroCard({ habits, freezeTokens, onUseFreeze }) {
   const { xp, level, levelProgress, nextLevelXP, currentLevelXP } = useGamification(habits);
   const title = level >= 30 ? 'Master' : level >= 20 ? 'Expert' : level >= 10 ? 'Veteran' : level >= 5 ? 'Rising Star' : 'Beginner';
   const xpInLevel = xp - currentLevelXP;
@@ -667,7 +700,19 @@ function XPHeroCard({ habits }) {
           <p className="text-sm opacity-80">Level {level} · {title}</p>
           <p className="text-2xl font-bold mt-1">{xp.toLocaleString()} XP</p>
         </div>
-        <div className="text-4xl">🏆</div>
+        <div className="text-right">
+          <div className="text-4xl text-center">🏆</div>
+          <div className="mt-2 text-sm flex items-center justify-end gap-2">
+            <span className="font-bold">❄️ {freezeTokens || 0}</span>
+            <button
+              onClick={onUseFreeze}
+              disabled={!freezeTokens || freezeTokens <= 0}
+              className="text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded disabled:opacity-50 transition-colors"
+            >
+              Use Token
+            </button>
+          </div>
+        </div>
       </div>
       <div className="mt-4 bg-white/20 rounded-full h-3">
         <div
