@@ -43,6 +43,35 @@ app.get('/', authMiddleware, async (req, res) => {
   }
 });
 
+app.get('/export', authMiddleware, async (req, res) => {
+  try {
+    const habits = await Habit.find({ userId: req.userId });
+    const format = req.query.format || 'json';
+
+    if (format === 'csv') {
+      let csv = 'Name,Category,Created At,Current Streak,Longest Streak,Total Completions\n';
+      habits.forEach(h => {
+        const name = `"${(h.name || '').replace(/"/g, '""')}"`;
+        const category = `"${(h.category || '').replace(/"/g, '""')}"`;
+        const createdAt = h.createdAt ? h.createdAt.toISOString().split('T')[0] : '';
+        const currentStreak = h.currentStreak || 0;
+        const longestStreak = h.longestStreak || 0;
+        const totalCompletions = h.completions ? h.completions.length : 0;
+        csv += `${name},${category},${createdAt},${currentStreak},${longestStreak},${totalCompletions}\n`;
+      });
+      res.header('Content-Type', 'text/csv');
+      res.header('Content-Disposition', 'attachment; filename="habits.csv"');
+      return res.send(csv);
+    } else {
+      res.header('Content-Type', 'application/json');
+      res.header('Content-Disposition', 'attachment; filename="habits.json"');
+      return res.json(habits);
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/archived', authMiddleware, async (req, res) => {
   try {
     const habits = await Habit.find({ userId: req.userId, archived: true }).sort({ createdAt: -1 });

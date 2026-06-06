@@ -224,6 +224,26 @@ function Dashboard({ setAuth }) {
     }
   };
 
+  const handleExport = async (format) => {
+    try {
+      const response = await habitAPI.export(format);
+      const blob = new Blob([response.data], { 
+        type: format === 'csv' ? 'text/csv' : 'application/json' 
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `habits.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success(`Exported as ${format.toUpperCase()}!`);
+    } catch (error) {
+      toast.error('Error exporting data');
+    }
+  };
+
   const fetchArchived = async () => {
     try {
       const res = await habitAPI.getArchived();
@@ -477,6 +497,24 @@ function Dashboard({ setAuth }) {
               ) : (
                 <RadialChart habits={habits} />
               )}
+            </div>
+
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
+              <h3 className="text-base font-bold mb-3 text-gray-900 dark:text-white">Export Data</h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleExport('csv')}
+                  className="flex-1 px-3 py-2 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 text-gray-700 dark:text-gray-300"
+                >
+                  📥 CSV
+                </button>
+                <button
+                  onClick={() => handleExport('json')}
+                  className="flex-1 px-3 py-2 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 text-gray-700 dark:text-gray-300"
+                >
+                  📥 JSON
+                </button>
+              </div>
             </div>
 
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5">
