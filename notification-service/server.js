@@ -45,22 +45,7 @@ app.get('/', authMiddleware, async (req, res) => {
 
     const habits = response.data.habits;
 
-    const today = new Date();
-    // 'days' array uses short names like 'Mon', 'Tue' matching the Habit model default
-    const todayDay     = today.toLocaleDateString('en-US', { weekday: 'short' });
-    const todayDateStr = today.toISOString().split('T')[0];
-
-    const pending = habits.filter(habit => {
-      if (!habit.reminder?.enabled) return false;
-      if (!habit.reminder?.days?.includes(todayDay)) return false;
-
-      // Exclude habits already completed today
-      const completedToday = habit.completions?.some(c =>
-        c.date?.startsWith(todayDateStr)
-      );
-      return !completedToday;
-    });
-
+    const pending = habits.filter(habit => habit.reminder?.enabled);
     res.json(pending);
   } catch (err) {
     console.error('[NOTIFICATIONS] Error fetching pending reminders:', err.message);

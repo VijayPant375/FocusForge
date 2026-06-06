@@ -89,7 +89,13 @@ export default function HabitChainModal({ habit, habits, onClose, onSuccess }) {
               <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Browser push notification</p>
             </div>
             <button
-              onClick={() => setReminder(r => ({ ...r, enabled: !r.enabled }))}
+              onClick={async () => {
+                const newEnabled = !reminder.enabled;
+                setReminder(r => ({ ...r, enabled: newEnabled }));
+                if (newEnabled && 'Notification' in window && Notification.permission !== 'granted') {
+                  await Notification.requestPermission();
+                }
+              }}
               className={`relative w-11 h-6 rounded-full transition-colors ${reminder.enabled ? 'bg-purple-500' : 'bg-gray-500/30'}`}
             >
               <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${reminder.enabled ? 'left-6' : 'left-1'}`} />
@@ -98,18 +104,59 @@ export default function HabitChainModal({ habit, habits, onClose, onSuccess }) {
 
           {reminder.enabled && (
             <div className="space-y-3 animate-fade-in-up">
-              <input
-                type="time"
-                value={reminder.time}
-                onChange={e => setReminder(r => ({ ...r, time: e.target.value }))}
-                className="w-full px-4 py-2 rounded-lg outline-none"
-                style={{
-                  backgroundColor: 'var(--glass-bg)',
-                  border: '1px solid var(--glass-border)',
-                  color: 'var(--text-primary)',
-                  colorScheme: 'auto'
-                }}
-              />
+              <div className="flex gap-2 w-full mb-3">
+                <select
+                  value={(() => {
+                    let h = parseInt(reminder.time.split(':')[0], 10);
+                    return h === 0 ? 12 : h > 12 ? h - 12 : h;
+                  })()}
+                  onChange={e => {
+                    let h = parseInt(e.target.value, 10);
+                    const isPm = parseInt(reminder.time.split(':')[0], 10) >= 12;
+                    if (isPm && h !== 12) h += 12;
+                    if (!isPm && h === 12) h = 0;
+                    const timeStr = `${String(h).padStart(2, '0')}:${reminder.time.split(':')[1]}`;
+                    setReminder(r => ({ ...r, time: timeStr }));
+                  }}
+                  className="px-3 py-2 rounded-lg outline-none flex-1 text-center font-medium cursor-pointer"
+                  style={{ backgroundColor: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)' }}
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
+                    <option key={h} value={h}>{h}</option>
+                  ))}
+                </select>
+                <span className="self-center font-bold" style={{ color: 'var(--text-primary)' }}>:</span>
+                <select
+                  value={reminder.time.split(':')[1]}
+                  onChange={e => {
+                    const timeStr = `${reminder.time.split(':')[0]}:${e.target.value}`;
+                    setReminder(r => ({ ...r, time: timeStr }));
+                  }}
+                  className="px-3 py-2 rounded-lg outline-none flex-1 text-center font-medium cursor-pointer"
+                  style={{ backgroundColor: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)' }}
+                >
+                  {Array.from({ length: 60 }, (_, i) => i).map(m => {
+                    const str = String(m).padStart(2, '0');
+                    return <option key={str} value={str}>{str}</option>;
+                  })}
+                </select>
+                <select
+                  value={parseInt(reminder.time.split(':')[0], 10) >= 12 ? 'PM' : 'AM'}
+                  onChange={e => {
+                    let h = parseInt(reminder.time.split(':')[0], 10);
+                    const isPm = e.target.value === 'PM';
+                    if (isPm && h < 12) h += 12;
+                    if (!isPm && h >= 12) h -= 12;
+                    const timeStr = `${String(h).padStart(2, '0')}:${reminder.time.split(':')[1]}`;
+                    setReminder(r => ({ ...r, time: timeStr }));
+                  }}
+                  className="px-3 py-2 rounded-lg outline-none flex-1 text-center font-medium cursor-pointer"
+                  style={{ backgroundColor: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)' }}
+                >
+                  <option value="AM">AM</option>
+                  <option value="PM">PM</option>
+                </select>
+              </div>
               <div className="flex gap-1.5 flex-wrap">
                 {DAYS.map(day => (
                   <button

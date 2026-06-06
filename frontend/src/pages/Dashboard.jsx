@@ -834,6 +834,15 @@ function Navbar({ user, onLogout, onShowBadges, onShowShare, habits }) {
 
       notifications.forEach(habit => {
         if (!habit.reminder?.time) return;
+
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const todayName = dayNames[now.getDay()];
+        if (!habit.reminder?.days?.includes(todayName)) return;
+
+        // Skip if completed today (checking local date string against completions)
+        const todayStr = now.toISOString().split('T')[0];
+        const isCompleted = habit.completions?.some(c => c.date?.startsWith(todayStr));
+        if (isCompleted) return;
         
         const [hours, minutes] = habit.reminder.time.split(':').map(Number);
         const reminderTime = new Date(now);
