@@ -60,6 +60,9 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - MONGODB_URI=${HABIT_DB_URI}
       - HABIT_SERVICE_URL=http://habit-service:5002
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
+      - VAPID_CONTACT_EMAIL=${VAPID_CONTACT_EMAIL}
     depends_on:
       mongodb:
         condition: service_healthy

@@ -107,7 +107,10 @@ app.post('/freeze', authMiddleware, async (req, res) => {
     }
     
     const habitsCollection = mongoose.connection.db.collection('habits');
-    const targetHabit = await habitsCollection.findOne({ userId: req.userId, currentStreak: 0, archived: { $ne: true } });
+    const targetHabit = await habitsCollection.findOne(
+      { userId: req.userId, currentStreak: 0, archived: { $ne: true }, completions: { $exists: true, $ne: [] } },
+      { sort: { 'completions.date': -1 } }
+    );
     
     if (!targetHabit) {
       return res.status(400).json({ error: 'No broken streaks found to freeze' });

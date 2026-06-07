@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { analyticsAPI } from '../api';
+import { analyticsAPI, aiAPI } from '../api';
 
 export default function WeeklyReviewModal({ isOpen, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [aiInsights, setAiInsights] = useState([]);
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -12,6 +14,16 @@ export default function WeeklyReviewModal({ isOpen, onClose }) {
         .then(res => {
           setData(res.data);
           setLoading(false);
+          
+          setAiLoading(true);
+          aiAPI.getWeeklyReview(res.data)
+            .then(response => {
+              setAiInsights(response.data.insights);
+              setAiLoading(false);
+            })
+            .catch(() => {
+              setAiLoading(false);
+            });
         })
         .catch(err => {
           console.error('Failed to fetch weekly review', err);
@@ -66,6 +78,22 @@ export default function WeeklyReviewModal({ isOpen, onClose }) {
           </div>
         ) : (
           <div className="text-center text-red-400 py-4">Failed to load data.</div>
+        )}
+
+        {aiLoading && (
+          <div className="relative z-10 mb-6 text-center">
+            <p className="text-sm text-[var(--text-secondary)]">Generating AI insights…</p>
+          </div>
+        )}
+        
+        {!aiLoading && aiInsights.length > 0 && (
+          <div className="relative z-10 mb-6 bg-black/20 rounded-2xl p-4 border border-[var(--glass-border)]">
+            {aiInsights.map((insight, idx) => (
+              <p key={idx} className="text-sm text-[var(--text-secondary)] mb-2 last:mb-0">
+                {insight}
+              </p>
+            ))}
+          </div>
         )}
 
         <div className="relative z-10 mt-6">

@@ -112,7 +112,8 @@ cron.schedule('* * * * *', async () => {
   try {
     const now          = new Date();
     const timeString   = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    const todayDay     = now.toLocaleDateString('en-US', { weekday: 'short' });
+    const DAY_NAMES    = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const todayDay     = DAY_NAMES[now.getDay()];
     const todayDateStr = now.toISOString().split('T')[0];
 
     // Skip if Mongoose is not yet connected

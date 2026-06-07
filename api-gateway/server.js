@@ -31,9 +31,21 @@ const forwardRequest = async (serviceUrl, req, res) => {
       url: `${serviceUrl}${req.path}`,
       data: req.body,
       headers: { authorization: req.headers.authorization },
-      timeout: 8000 // 8 second timeout
+      timeout: 8000, // 8 second timeout
+      responseType: 'arraybuffer'
     });
-    res.status(response.status).json(response.data);
+
+    const contentType = response.headers['content-type'];
+    if (contentType && contentType.includes('text/csv')) {
+      res.setHeader('Content-Type', contentType);
+      const contentDisposition = response.headers['content-disposition'];
+      if (contentDisposition) {
+        res.setHeader('Content-Disposition', contentDisposition);
+      }
+      res.status(response.status).send(Buffer.from(response.data));
+    } else {
+      res.status(response.status).json(JSON.parse(Buffer.from(response.data).toString()));
+    }
   } catch (error) {
     console.error(`Gateway Error [${serviceUrl}]:`, error.message);
     if (error.code === 'ECONNABORTED') {

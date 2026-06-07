@@ -70,6 +70,7 @@ export const aiAPI = {
   getInsights: () => api.get('/ai/insights'),
   getFailurePatterns: (data) => api.post('/ai/failure-patterns', data),
   getCoachingMessage: (data) => api.post('/ai/coaching-message', data),
+  getWeeklyReview: (data) => api.post('/ai/weekly-review', data),
 };
 
 export const notificationAPI = {

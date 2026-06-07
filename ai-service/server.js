@@ -329,6 +329,26 @@ app.post('/coaching-message', authMiddleware, async (req, res) => {
   }
 });
 
+app.post('/weekly-review', authMiddleware, async (req, res) => {
+  try {
+    const data = req.body || {};
+    const prompt = `Weekly Stats:
+Total Completions: ${data.totalCompletionsThisWeek || 0}
+Completion Rate: ${data.completionRate || 0}%
+Best Streak: ${data.bestStreak || 0}
+Most Consistent Habit: ${data.mostConsistentHabit || 'None'}
+
+Give exactly 2 short observations about the week, and 1 actionable suggestion for next week. Return plain text, one point per line, no bullet symbols, no markdown, max 20 words per line.`;
+
+    const text = await generateGeminiText(prompt);
+    const insights = normalizeLines(text, 3);
+    res.json({ insights: insights.length > 0 ? insights : ['Keep showing up — consistency compounds over time.', 'Focus on your top habit and let it pull the others along.'] });
+  } catch (error) {
+    console.error('Gemini weekly review error:', error.message);
+    res.json({ insights: ['Keep showing up — consistency compounds over time.', 'Focus on your top habit and let it pull the others along.'] });
+  }
+});
+
 const PORT = process.env.PORT || 5004;
 app.listen(PORT, () => {
   console.log(`AI Service running on port ${PORT}`);

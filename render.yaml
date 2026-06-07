@@ -61,6 +61,29 @@ services:
       - key: GEMINI_API_KEY
         sync: false   # Set manually in Render dashboard - never commit this
 
+  # ─── 4.5. Notification Service ──────────────────────────────────────────────
+  - type: web
+    name: focusforge-notification-service
+    runtime: node
+    rootDir: notification-service
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: HABIT_SERVICE_URL
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_CONTACT_EMAIL
+        sync: false
+
   # ─── 5. API Gateway (deploy LAST — needs all service URLs above) ─────────────
   - type: web
     name: focusforge-api-gateway
@@ -79,6 +102,8 @@ services:
         sync: false   # Paste the focusforge-analytics-service Render URL
       - key: AI_SERVICE_URL
         sync: false   # Paste the focusforge-ai-service Render URL
+      - key: NOTIFICATION_SERVICE_URL
+        sync: false
 
   # ─── 6. Frontend (Static Site — deploy LAST after gateway is live) ───────────
   - type: web
