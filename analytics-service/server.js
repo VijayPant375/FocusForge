@@ -85,6 +85,51 @@ app.get('/weekly', authMiddleware, async (req, res) => {
   }
 });
 
+app.get('/weekly-review', authMiddleware, async (req, res) => {
+  try {
+    const habits = await Habit.find({ userId: req.userId, archived: { $ne: true } });
+    
+    let totalCompletionsThisWeek = 0;
+    let bestStreak = 0;
+    let mostConsistentHabit = null;
+    let maxHabitCompletions = -1;
+
+    const today = new Date();
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(today.getDate() - 7);
+    oneWeekAgo.setHours(0, 0, 0, 0);
+
+    habits.forEach(habit => {
+      // Find completions this week
+      const completionsThisWeek = habit.completions.filter(c => {
+        const cDate = new Date(c.date);
+        return cDate >= oneWeekAgo && cDate <= today;
+      });
+      totalCompletionsThisWeek += completionsThisWeek.length;
+      
+      if (habit.longestStreak > bestStreak) {
+        bestStreak = habit.longestStreak;
+      }
+      
+      if (completionsThisWeek.length > maxHabitCompletions) {
+        maxHabitCompletions = completionsThisWeek.length;
+        mostConsistentHabit = habit.name;
+      }
+    });
+
+    const completionRate = habits.length > 0 ? Math.round((totalCompletionsThisWeek / (habits.length * 7)) * 100) : 0;
+
+    res.json({
+      totalCompletionsThisWeek,
+      bestStreak,
+      mostConsistentHabit,
+      completionRate
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 const PORT = process.env.PORT || 5003;
 app.listen(PORT, () => {
   console.log(`✅ Analytics Service running on port ${PORT}`);

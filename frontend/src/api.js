@@ -63,6 +63,7 @@ export const habitAPI = {
 export const analyticsAPI = {
   getStats: () => api.get('/analytics/stats'),
   getWeekly: () => api.get('/analytics/weekly'),
+  getWeeklyReview: () => api.get('/analytics/weekly-review'),
 };
 
 export const aiAPI = {

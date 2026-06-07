@@ -6,6 +6,7 @@ import AddHabitModal from '../components/AddHabitModal';
 import WeeklyChart from '../components/WeeklyChart';
 import EditHabitModal from '../components/EditHabitModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
+import WeeklyReviewModal from '../components/WeeklyReviewModal';
 import toast from 'react-hot-toast';
 import confetti from 'canvas-confetti';
 import { enqueue } from '../utils/offlineQueue';
@@ -43,15 +44,16 @@ function Dashboard({ setAuth }) {
   const [showArchived, setShowArchived] = useState(false);
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showBadges, setShowBadges] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const [showWeeklyReview, setShowWeeklyReview] = useState(false);
   const [editingHabit, setEditingHabit] = useState(null);
   const [deletingHabit, setDeletingHabit] = useState(null);
 
   const [pomodoroHabit, setPomodoroHabit] = useState(null);
   const [moodHabit, setMoodHabit] = useState(null);
   const [chainHabit, setChainHabit] = useState(null);
-  const [showTemplates, setShowTemplates] = useState(false);
-  const [showBadges, setShowBadges] = useState(false);
-  const [showShare, setShowShare] = useState(false);
   const [chainSuggestion, setChainSuggestion] = useState(null);
 
   const navigate = useNavigate();
@@ -427,6 +429,12 @@ function Dashboard({ setAuth }) {
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Your Habits</h2>
                 <div className="flex gap-2">
                   <button
+                    onClick={() => setShowWeeklyReview(true)}
+                    className="px-3 py-1.5 rounded-xl border border-purple-200 dark:border-purple-900/50 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors text-sm text-purple-700 dark:text-purple-400 flex items-center gap-1 font-medium"
+                  >
+                    📅 Weekly Review
+                  </button>
+                  <button
                     onClick={() => setShowTemplates(true)}
                     className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1"
                   >
@@ -622,6 +630,7 @@ function Dashboard({ setAuth }) {
       {moodHabit && <MoodCheckInModal habit={moodHabit} onClose={() => setMoodHabit(null)} onSuccess={(moodData) => { const currentHabit = moodHabit; setMoodHabit(null); handleCompleteWithMood(currentHabit._id, moodData || {}); }} />}
       {pomodoroHabit && <PomodoroTimer habitName={pomodoroHabit.name} onClose={() => setPomodoroHabit(null)} />}
       {showTemplates && <TemplatesModal onClose={() => setShowTemplates(false)} onSuccess={() => { setShowTemplates(false); fetchData(); }} />}
+      <WeeklyReviewModal isOpen={showWeeklyReview} onClose={() => setShowWeeklyReview(false)} />
       {chainHabit && <HabitChainModal habit={chainHabit} habits={habits} onClose={() => setChainHabit(null)} onSuccess={() => { setChainHabit(null); fetchData(); }} />}
       {showBadges && <BadgesPanel habits={habits} onClose={() => setShowBadges(false)} />}
       {showShare && <ShareCardModal habits={habits} stats={stats} onClose={() => setShowShare(false)} />}
