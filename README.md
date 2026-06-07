@@ -52,17 +52,22 @@ Unlike a basic CRUD tracker, FocusForge includes habit chains, mood and energy c
 - Daily completion flow with duplicate-completion prevention
 - Automatic streak and longest-streak calculation
 - Category support for `health`, `productivity`, `mindfulness`, `learning`, `fitness`, and `other`
+- Soft archive habits instead of permanent deletion, preserving historical data
+- Archived habit view with restore capability
+- Bulk offline completion queue — completions logged locally when offline, auto-synced on reconnect
 
 ### Focus and Consistency Features
 - Habit chains to link one habit to another
 - Post-completion chain suggestions on the dashboard
 - Reminder settings per habit with time and repeat days
+- Streak freeze tokens earned at XP milestones — spend one to protect a broken streak
 - Mood and energy logging when marking a habit complete
 - Built-in Pomodoro timer modal for focused sessions
 
 ### Analytics and Visualization
 - Summary cards for total habits, completions, average streak, and completion rate
 - Weekly progress analytics from the analytics service
+- Weekly review modal with stats summary and AI-generated observations powered by Gemini
 - Habit consistency heatmap
 - Radial category distribution chart
 - Animated counters and circular progress indicators
@@ -72,6 +77,7 @@ Unlike a basic CRUD tracker, FocusForge includes habit chains, mood and energy c
 - Level progression with titles
 - 20+ unlockable achievement badges
 - Streak visuals and milestone-style feedback
+- Freeze token counter displayed on XP card — earns one token per 500 XP milestone
 - Celebration confetti on successful completion
 
 ### Productivity Experience
@@ -84,9 +90,17 @@ Unlike a basic CRUD tracker, FocusForge includes habit chains, mood and energy c
 ### AI Insights
 - Personalized insight messages generated from user habit data
 - Feedback based on streak strength, completion behavior, category concentration, and timing patterns
+- Failure pattern detection — identifies which days or sequences most commonly cause missed habits
+- Coaching messages on completion and miss events with supportive and tough-love modes
+- Weekly review AI — receives the user's 7-day stats and returns 2 observations + 1 actionable suggestion
 - Welcome state and fallback insights for new or low-activity users
 
-> Important: the current "AI insights" service uses Gemini 2.5 Flash to generate personalized coaching messages and pattern detection based on the user's habit history.
+### PWA and Offline Support
+- Installable as a native app on desktop and mobile via VitePWA
+- VAPID background push notifications — delivered by the OS even when the browser tab is closed
+- Subscription management via dedicated push subscription endpoint in notification service
+- Offline habit logging — completions queued in IndexedDB when offline, silently synced on reconnect
+- Service worker configured via VitePWA workbox with a custom push handler (`push-sw.js`)
 
 ---
 
@@ -179,6 +193,7 @@ Response Back to Frontend
 | Morgan | API request logging in gateway |
 | CORS | Cross-origin support |
 | `@google/generative-ai` | Gemini API client for AI insights, coaching messages, and failure pattern detection |
+| `web-push` | VAPID push notification delivery in notification service |
 
 ### DevOps and Deployment
 
@@ -258,6 +273,8 @@ All frontend requests go through the API gateway at `http://localhost:5000/api`.
 POST /api/users/register
 POST /api/users/login
 GET  /api/users/profile
+POST /api/users/award-freeze
+POST /api/users/freeze
 ```
 
 ### Habit Service
@@ -265,12 +282,17 @@ GET  /api/users/profile
 ```text
 POST   /api/habits
 GET    /api/habits
+GET    /api/habits/archived
+GET    /api/habits/export?format=json|csv
 PUT    /api/habits/:id
 DELETE /api/habits/:id
+PATCH  /api/habits/:id/restore
+DELETE /api/habits/:id/permanent
 POST   /api/habits/:id/complete
 POST   /api/habits/:id/chain
 DELETE /api/habits/:id/chain
 PUT    /api/habits/:id/reminder
+POST   /api/habits/sync-offline
 ```
 
 ### Analytics Service
@@ -278,6 +300,7 @@ PUT    /api/habits/:id/reminder
 ```text
 GET /api/analytics/stats
 GET /api/analytics/weekly
+GET /api/analytics/weekly-review
 ```
 
 ### AI Service
@@ -287,6 +310,14 @@ GET  /api/ai/insights
 POST /api/ai/insights
 POST /api/ai/failure-patterns
 POST /api/ai/coaching-message
+POST /api/ai/weekly-review
+```
+
+### Notification Service
+
+```text
+GET  /api/notifications
+POST /api/notifications/subscribe
 ```
 
 ### Health Check
@@ -321,9 +352,15 @@ USER_SERVICE_URL=http://user-service:5001
 HABIT_SERVICE_URL=http://habit-service:5002
 ANALYTICS_SERVICE_URL=http://analytics-service:5003
 AI_SERVICE_URL=http://ai-service:5004
+NOTIFICATION_SERVICE_URL=http://notification-service:5005
+VAPID_PUBLIC_KEY=your_vapid_public_key
+VAPID_PRIVATE_KEY=your_vapid_private_key
+VAPID_CONTACT_EMAIL=mailto:you@example.com
 ```
 
 > In Docker, service URLs point to container names. For non-Docker local development, use localhost-based URLs and MongoDB connection strings that match your machine.
+
+> To generate VAPID keys, run `npx web-push generate-vapid-keys` and paste the output into your `.env` and Render dashboard.
 
 ---
 
@@ -504,6 +541,9 @@ frontend/src/
 |-- App.jsx
 |-- context/ThemeContext.jsx
 |-- hooks/useGamification.js
+|-- utils/
+|   |-- offlineQueue.js
+|   `-- push.js
 |-- pages/
 |   |-- Landing.jsx
 |   |-- Login.jsx
@@ -527,7 +567,8 @@ frontend/src/
     |-- TemplatesModal.jsx
     |-- ThemeToggle.jsx
     |-- VoiceCommands.jsx
-    `-- WeeklyChart.jsx
+    |-- WeeklyChart.jsx
+    |-- WeeklyReviewModal.jsx
 ```
 
 ---
@@ -554,22 +595,27 @@ frontend/src/
 - Landing page with demo mode
 - Failure pattern detection
 - Coaching messages on completion and miss events
+- Habit archive with soft delete and restore
+- Streak freeze tokens
+- CSV and JSON data export
+- Time-aware reminder notifications
+- VAPID background push notifications
+- Offline habit logging with IndexedDB sync
+- Weekly review with Gemini AI observations
 
 ### Planned or Partial
-- Browser push notifications (implemented locally, requires push service configuration)
-- weekly mood trend chart
-- social accountability features
-- community-shared templates
-- advanced export and import options
-- onboarding flow
-- broader deployment polish and marketing assets
+- Weekly Mood Trend Chart
+- Social Accountability Features
+- Community-Shared Templates
+- Onboarding Flow
+- Broader Deployment Polish and Marketing Assets
 
 ---
 
 ## Limitations and Notes
 
 - Voice commands depend on browser speech recognition support and may not work in every browser.
-- In-browser notifications (chime + Web Notification API) fire when the tab is open. Background VAPID push notifications (delivered when the tab is closed) are not yet configured and require a push service.
+- In-browser notifications (chime + Web Notification API) fire when the tab is open. VAPID background push notifications are fully implemented — they require VAPID keys to be set in the environment and the user to grant browser notification permission.
 - There is no automated test suite included in the repository.
 - The manual startup script is Windows-oriented; Linux and macOS users should launch services manually.
 
