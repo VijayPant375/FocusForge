@@ -71,6 +71,7 @@ export const aiAPI = {
 
 export const notificationAPI = {
   getPending: () => api.get('/notifications'),
+  subscribe: (subscription) => api.post('/notifications/subscribe', { subscription })
 };
 
 export default api;

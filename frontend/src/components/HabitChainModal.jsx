@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { habitAPI } from '../api';
 import toast from 'react-hot-toast';
+import { subscribeToPush } from '../utils/push';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -94,6 +95,7 @@ export default function HabitChainModal({ habit, habits, onClose, onSuccess }) {
                   onClick={async () => {
                     if ('Notification' in window && Notification.permission !== 'granted') {
                       await Notification.requestPermission();
+                      if (Notification.permission === 'granted') await subscribeToPush();
                     }
                     if (Notification.permission === 'granted') {
                       new Notification('Test Reminder', { body: 'Notifications are working!', icon: '/icon-192.png' });
@@ -126,6 +128,9 @@ export default function HabitChainModal({ habit, habits, onClose, onSuccess }) {
                   setReminder(r => ({ ...r, enabled: newEnabled }));
                   if (newEnabled && 'Notification' in window && Notification.permission !== 'granted') {
                     await Notification.requestPermission();
+                    if (Notification.permission === 'granted') await subscribeToPush();
+                  } else if (newEnabled && Notification.permission === 'granted') {
+                    await subscribeToPush();
                   }
                 }}
                 className={`relative w-11 h-6 rounded-full transition-colors ${reminder.enabled ? 'bg-purple-500' : 'bg-gray-500/30'}`}

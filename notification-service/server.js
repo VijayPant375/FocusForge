@@ -15,6 +15,22 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ Notification Service: MongoDB connected'))
   .catch(err => console.error('❌ MongoDB connection error:', err));
 
+const webpush = require('web-push');
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    process.env.VAPID_CONTACT_EMAIL || 'mailto:test@example.com',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
+
+const subscriptionSchema = new mongoose.Schema({
+  userId: { type: String, required: true },
+  subscription: { type: Object, required: true },
+  createdAt: { type: Date, default: Date.now }
+});
+const PushSubscription = mongoose.model('PushSubscription', subscriptionSchema);
+
 // Lightweight read-only Habit schema — mirrors only the fields needed for reminder checks.
 // The full schema lives in habit-service; this projection avoids duplicating business logic.
 const habitSchema = new mongoose.Schema({
@@ -52,6 +68,40 @@ app.get('/', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Could not fetch notifications' });
   }
 });
+
+// ─── POST /subscribe (save VAPID subscription) ───
+app.post('/subscribe', authMiddleware, async (req, res) => {
+  try {
+    const { subscription } = req.body;
+    if (!subscription) return res.status(400).json({ error: 'Subscription missing' });
+    
+    // Upsert the subscription
+    await PushSubscription.findOneAndUpdate(
+      { userId: req.userId },
+      { userId: req.userId, subscription },
+      { upsert: true, new: true }
+    );
+    res.status(201).json({ message: 'Subscription saved.' });
+  } catch (err) {
+    console.error('[NOTIFICATIONS] Error saving subscription:', err.message);
+    res.status(500).json({ error: 'Failed to save subscription' });
+  }
+});
+
+const sendPushNotification = async (userId, title, body) => {
+  try {
+    const subRecord = await PushSubscription.findOne({ userId });
+    if (!subRecord) return;
+    await webpush.sendNotification(subRecord.subscription, JSON.stringify({ title, body }));
+  } catch (err) {
+    if (err.statusCode === 404 || err.statusCode === 410) {
+      console.log(`[PUSH] Subscription expired for user ${userId}, removing from DB.`);
+      await PushSubscription.deleteOne({ userId });
+    } else {
+      console.error('[PUSH] Failed to send push notification:', err.message);
+    }
+  }
+};
 
 // ─── Cron: runs every minute, sweeps all habits for due reminders ─────────────
 // Queries MongoDB directly so it can check across all users without needing
@@ -91,11 +141,7 @@ cron.schedule('* * * * *', async () => {
       console.log(
         `[CRON] 🔔 Reminder due | user=${habit.userId} | habit="${habit.name}" | time=${timeString}`
       );
-      // TODO: send VAPID push here when push service is configured
-      // webpush.sendNotification(subscription, JSON.stringify({
-      //   title: 'FocusForge Reminder',
-      //   body: `Time for your habit: ${habit.name}`,
-      // }));
+      sendPushNotification(habit.userId, 'FocusForge Reminder', `Time for your habit: ${habit.name}`);
     });
 
     if (due.length > 0) {
