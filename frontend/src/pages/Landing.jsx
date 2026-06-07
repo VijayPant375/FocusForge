@@ -16,15 +16,29 @@ const FEATURES = [
   },
   {
     emoji: '🏆',
-    title: 'Streaks & XP',
-    desc: 'Gamified progression with XP earned per completion, level titles, streak flames, and 20+ unlockable achievement badges.',
+    title: 'Streaks, XP & Freezes',
+    desc: 'Earn XP and level up. Spend Streak Freeze Tokens to save your progress when life gets in the way.',
     color: 'from-pink-500/10 to-rose-500/10 border-pink-200 dark:border-pink-800/50',
     badge: 'bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300',
   },
   {
+    emoji: '📡',
+    title: 'Work Offline, Sync Later',
+    desc: 'Log your habits even without an internet connection. The app securely queues them and syncs instantly when you reconnect.',
+    color: 'from-emerald-500/10 to-green-500/10 border-emerald-200 dark:border-emerald-800/50',
+    badge: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300',
+  },
+  {
+    emoji: '🔔',
+    title: 'Native Push Notifications',
+    desc: 'Set custom time-aware reminders for specific days of the week and receive native web push notifications directly to your device.',
+    color: 'from-amber-500/10 to-yellow-500/10 border-amber-200 dark:border-amber-800/50',
+    badge: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
+  },
+  {
     emoji: '📊',
-    title: 'Analytics That Matter',
-    desc: 'Consistency heatmaps, weekly progress charts, failure pattern detection, category breakdowns, and completion rate tracking.',
+    title: 'Deep Analytics & Reviews',
+    desc: 'Review your 7-day consistency with our Weekly Review, spot failure patterns, or safely export your entire history to CSV/JSON.',
     color: 'from-blue-500/10 to-cyan-500/10 border-blue-200 dark:border-blue-800/50',
     badge: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
   },
@@ -128,8 +142,8 @@ export default function Landing({ setAuth }) {
           </h1>
 
           <p className="text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            FocusForge combines gamified streak tracking, personalized Gemini AI coaching, and detailed
-            analytics into a production-deployed full-stack microservices platform.
+            FocusForge combines gamified streak tracking, personalized Gemini AI coaching, offline-first queuing, 
+            and rich analytics into a production-ready Progressive Web App.
           </p>
 
           {/* CTA Buttons */}
@@ -210,6 +224,12 @@ export default function Landing({ setAuth }) {
               {b.label}
             </span>
           ))}
+          <span className="px-4 py-1.5 rounded-full text-sm font-semibold border border-transparent bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+            IndexedDB Offline
+          </span>
+          <span className="px-4 py-1.5 rounded-full text-sm font-semibold border border-transparent bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300">
+            VAPID Web Push
+          </span>
         </div>
       </section>
 

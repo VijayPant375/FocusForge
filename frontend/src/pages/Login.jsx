@@ -44,9 +44,11 @@ function Login({ setAuth }) {
         </p>
         <div className="space-y-3 w-full max-w-xs">
           {[
-            'AI-powered habit insights',
-            '5-service microservices backend',
-            'Streak tracking & gamification',
+            'AI-powered habit coaching',
+            'Offline queuing & background sync',
+            'Native VAPID push notifications',
+            'Streak tracking & freeze tokens',
+            'Deep weekly review analytics'
           ].map((f) => (
             <div key={f} className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3">
               <span className="text-green-300 font-bold">✓</span>
