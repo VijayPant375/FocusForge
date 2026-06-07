@@ -205,6 +205,59 @@ app.post('/:id/chain', authMiddleware, async (req, res) => {
   }
 });
 
+app.post('/sync-offline', authMiddleware, async (req, res) => {
+  try {
+    const completions = req.body; // array of { habitId, completedAt, mood, energy }
+    if (!Array.isArray(completions)) {
+      return res.status(400).json({ error: 'Expected an array of completions' });
+    }
+
+    let synced = 0;
+    let skipped = 0;
+
+    for (const item of completions) {
+      try {
+        const habit = await Habit.findOne({ _id: item.habitId, userId: req.userId });
+        if (!habit) {
+          skipped++;
+          continue;
+        }
+
+        const dateToLog = new Date(item.completedAt || new Date());
+        dateToLog.setHours(0, 0, 0, 0);
+
+        const alreadyCompleted = habit.completions.some(c => {
+          const cDate = new Date(c.date);
+          cDate.setHours(0, 0, 0, 0);
+          return cDate.getTime() === dateToLog.getTime();
+        });
+
+        if (alreadyCompleted) {
+          skipped++;
+          continue;
+        }
+
+        habit.completions.push({
+          date: dateToLog,
+          completed: true,
+          mood: item.mood || null,
+          energy: item.energy || null
+        });
+        habit.calculateStreak();
+        await habit.save();
+        synced++;
+      } catch (err) {
+        console.error(`Error syncing habit ${item.habitId}:`, err);
+        skipped++;
+      }
+    }
+
+    res.json({ message: 'Offline sync complete', synced, skipped });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.delete('/:id/chain', authMiddleware, async (req, res) => {
   try {
     const habit = await Habit.findOneAndUpdate(

@@ -56,6 +56,8 @@ export const habitAPI = {
   removeChain: (id) => api.delete(`/habits/${id}/chain`),
   // 2.4 Reminders
   setReminder: (id, data) => api.put(`/habits/${id}/reminder`, data),
+  // Offline
+  syncOffline: (completions) => api.post('/habits/sync-offline', completions),
 };
 
 export const analyticsAPI = {

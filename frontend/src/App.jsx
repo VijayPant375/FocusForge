@@ -4,7 +4,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Landing from './pages/Landing';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
+import { getAll, clear } from './utils/offlineQueue';
+import { habitAPI } from './api';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('token'));
@@ -12,6 +14,32 @@ function App() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     setIsAuthenticated(!!token);
+  }, []);
+
+  useEffect(() => {
+    const syncOfflineHabits = async () => {
+      try {
+        const queued = await getAll();
+        if (queued && queued.length > 0) {
+          const res = await habitAPI.syncOffline(queued);
+          await clear();
+          if (res.data.synced > 0) {
+            toast.success(`Synced ${res.data.synced} habits from offline!`, { icon: '🔄' });
+            window.dispatchEvent(new Event('offline-sync-complete'));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to sync offline habits:', error);
+      }
+    };
+
+    window.addEventListener('online', syncOfflineHabits);
+    // Also try syncing on initial load if online
+    if (navigator.onLine) {
+      syncOfflineHabits();
+    }
+    
+    return () => window.removeEventListener('online', syncOfflineHabits);
   }, []);
 
   const ProtectedRoute = ({ children }) => {

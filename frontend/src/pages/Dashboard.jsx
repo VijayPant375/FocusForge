@@ -8,6 +8,7 @@ import EditHabitModal from '../components/EditHabitModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import toast from 'react-hot-toast';
 import confetti from 'canvas-confetti';
+import { enqueue } from '../utils/offlineQueue';
 
 import AnimatedCounter from '../components/AnimatedCounter';
 import ThemeToggle from '../components/ThemeToggle';
@@ -119,18 +120,22 @@ function Dashboard({ setAuth }) {
   const fetchData = async () => {
     try {
       const [habitsRes, statsRes, insightsRes, profileRes] = await Promise.all([
-        habitAPI.getAll().catch(e => { console.error('Habit fetch error:', e); return { data: { habits: [] } }; }),
-        analyticsAPI.getStats().catch(e => { console.error('Stats fetch error:', e); return { data: { totalHabits: 0, completedToday: 0, completionRate: 0, avgStreak: 0 } }; }),
-        aiAPI.getInsights().catch(e => { console.error('Insights fetch error:', e); return { data: { insights: [] } }; }),
-        authAPI.getProfile().catch(e => { console.error('Profile error:', e); return { data: { user: { freezeTokens: 0 } } }; }),
+        habitAPI.getAll().catch(e => { console.error('Habit fetch error:', e); return { data: { habits: null } }; }),
+        analyticsAPI.getStats().catch(e => { console.error('Stats fetch error:', e); return { data: null }; }),
+        aiAPI.getInsights().catch(e => { console.error('Insights fetch error:', e); return { data: { insights: null } }; }),
+        authAPI.getProfile().catch(e => { console.error('Profile error:', e); return { data: { user: { freezeTokens: null } } }; }),
       ]);
 
       const nextHabits = habitsRes.data.habits;
-      setHabits(nextHabits);
-      setStats(statsRes.data);
-      setInsights(insightsRes.data.insights || []);
-      setFreezeTokens(profileRes.data.user?.freezeTokens || 0);
-      await fetchFailurePatterns(nextHabits);
+      if (nextHabits) {
+        setHabits(nextHabits);
+        await fetchFailurePatterns(nextHabits);
+      }
+      
+      if (statsRes.data) setStats(statsRes.data);
+      if (insightsRes.data.insights) setInsights(insightsRes.data.insights);
+      if (profileRes.data.user?.freezeTokens !== null) setFreezeTokens(profileRes.data.user?.freezeTokens || 0);
+      
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -145,11 +150,34 @@ function Dashboard({ setAuth }) {
     navigate('/');
   };
 
+  useEffect(() => {
+    const handleSyncComplete = () => fetchData();
+    window.addEventListener('offline-sync-complete', handleSyncComplete);
+    return () => window.removeEventListener('offline-sync-complete', handleSyncComplete);
+  }, [habits]);
+
   const handleCompleteClick = (habit) => {
     setMoodHabit(habit);
   };
 
   const handleCompleteWithMood = async (habitId, moodData) => {
+    if (!navigator.onLine) {
+      await enqueue({ habitId, completedAt: new Date().toISOString(), ...moodData });
+      toast('You are offline — this will sync when you are back.', { icon: '📡' });
+      
+      // Optimistic UI update
+      setHabits(habits.map(h => {
+        if (h._id === habitId) {
+          return {
+            ...h,
+            completions: [...(h.completions || []), { date: new Date().toISOString(), completed: true }]
+          };
+        }
+        return h;
+      }));
+      return;
+    }
+
     try {
       const oldXP = computeGamification(habits).xp;
 
@@ -193,7 +221,23 @@ function Dashboard({ setAuth }) {
         setTimeout(() => setChainSuggestion(null), 6000);
       }
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Error completing habit');
+      if (!error.response && error.isAxiosError) {
+        await enqueue({ habitId, completedAt: new Date().toISOString(), ...moodData });
+        toast('You are offline — this will sync when you are back.', { icon: '📡' });
+        
+        // Optimistic UI update
+        setHabits(habits.map(h => {
+          if (h._id === habitId) {
+            return {
+              ...h,
+              completions: [...(h.completions || []), { date: new Date().toISOString(), completed: true }]
+            };
+          }
+          return h;
+        }));
+      } else {
+        toast.error(error.response?.data?.error || 'Failed to complete habit');
+      }
     }
   };
 
